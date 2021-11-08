@@ -1,18 +1,23 @@
-all:
-	gcc cliente.c -o .gitignore/cliente
-	#gcc balcao.c -o .gitignore/balcao
-	#gcc classificador.c -o .gitignore/classificador
-	#gcc medico.c -o .gitignore/medico
+SOURCES = cliente.c	\
+					balcao.c	\
+					medico.c	\
 
-cliente: 
-	gcc cliente.c -o .gitignore/cliente
+OBJECTS	= $(patsubst %.c, %, $(SOURCES))
 
-balcao: 
-	gcc balcao.c -o .gitignore/balcao
+FLAGS		= -Wall -Wextra -Werror
 
-classificador: 
-	gcc classificador.c -o .gitignore/classificador
+CC			= gcc $(FLAGS)
 
-medico: 
-	gcc medico.c -o .gitignore/medico
+all:			$(OBJECTS)
 
+cliente:
+
+balcao:
+
+medico:
+
+clean:
+	@echo "Cleaning all"
+	@rm -f $(OBJECTS)
+
+re:				clean all
