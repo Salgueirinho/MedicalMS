@@ -10,7 +10,7 @@ CC			= gcc $(FLAGS)
 
 all:			$(OBJECTS)
 
-cliente:
+cliente: utils.o
 
 balcao:
 
