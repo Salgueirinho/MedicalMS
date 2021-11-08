@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include "utils.h"
 
 typedef struct{
   char NomeCliente[40];
@@ -22,14 +23,19 @@ void GuardaSintomas(pCliente utente){
 
 int main(int argc, char* argv[], char* envp[]){
 	(void) envp;
-  if(argc < 2){
-    printf("Faltam Argumentos de Entrada\nNecessário Nome do Cliente\n");
+  if(argc < 2)
+	{
+    /* printf("Faltam Argumentos de Entrada\nNecessário Nome do Cliente\n");
+		instead of printf, prefer using utils.h */
+		ourPutString("Faltam argumentos de entrada\nnecessario nome do Cliente\n");
     return 1;
-}
-
+	}
   Cliente utente;
   GuardaNome(argv, &utente);
-  printf("Olá %s\n",utente.NomeCliente);
-
+  /* printf("Olá %s\n",utente.NomeCliente);
+	 instead of printf, prefer using utils.h */
+	ourPutString("Ola ");
+	ourPutString(utente.NomeCliente);
+	ourPutChar('\n');
   return 0;
 }
