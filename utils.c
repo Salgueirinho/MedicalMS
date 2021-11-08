@@ -19,5 +19,5 @@ int		ourStrLen(char *str)
 
 void	ourPutString(char *str)
 {
-	write(1, str, ourStrLen);
+	write(1, str, ourStrLen(str));
 }
