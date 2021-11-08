@@ -17,11 +17,11 @@ void GuardaNome(char *argv[], pCliente utente){
 }
 
 void GuardaSintomas(pCliente utente){
-  
-
+	(void) utente;  
 }
 
 int main(int argc, char* argv[], char* envp[]){
+	(void) envp;
   if(argc < 2){
     printf("Faltam Argumentos de Entrada\nNecessário Nome do Cliente\n");
     return 1;
