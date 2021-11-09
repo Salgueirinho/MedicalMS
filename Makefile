@@ -1,6 +1,7 @@
 SOURCES = cliente.c	\
 					balcao.c	\
 					medico.c	\
+					*.o				\
 
 OBJECTS	= $(patsubst %.c, %, $(SOURCES))
 
@@ -17,7 +18,6 @@ balcao:
 medico:
 
 clean:
-	@echo "Cleaning all"
 	@rm -f $(OBJECTS)
 
 re:				clean all
