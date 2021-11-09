@@ -1,14 +1,5 @@
 #include <unistd.h>
 
-void	ourPutChar(char c)
-{
-	/*
-		this is our version of putchar:
-		- using system function calls
-	*/
-	write(1, &c, 1);
-}
-
 int		ourStrLen(char *str)
 {
 	/*
