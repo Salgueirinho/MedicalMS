@@ -1,46 +1,24 @@
-#include <stdlib.h>
-#include <unistd.h>
 #include <stdio.h>
-#include <string.h>
+#include "cliente.h"
 #include "utils.h"
 
-typedef struct{
-	/*
-		Acho que faz sentido mudar NomeCliente[40] para *NomeCliente
-		pois o nome do cliente na pratica vai ser introduzido atraves
-		de parametros do main, ou seja, ja estara alocado.	
-	*/
-  char *NomeCliente;
-  char Sintomas[255];
-} Cliente, *pCliente;
-
-void GuardaNome(char *argv[], pCliente utente){
-  strcpy(utente->NomeCliente,"");
-  for(int i=1;argv[i]!=NULL;i++){
-    strcat(utente->NomeCliente,argv[i]);
-    strcat(utente->NomeCliente, " ");
-  }
+void guardaNome(char* nome, pCliente utente){
+	utente->nomeCliente = nome;
 }
 
-void GuardaSintomas(pCliente utente){
-	(void) utente;  
+void pedeSintomas(pCliente utente){
+	scanf("%255[^\n]", utente->sintomas);
 }
 
-int main(int argc, char* argv[], char* envp[]){
-	(void) envp;
+int main(int argc, char* argv[]){
   if(argc < 2)
 	{
-    /* printf("Faltam Argumentos de Entrada\nNecessário Nome do Cliente\n");
-		instead of printf, prefer using utils.h */
-		ourPutString("Faltam argumentos de entrada\nnecessario nome do Cliente\n");
-    return 1;
+		ourPutString("Faltam argumentos de entrada: necessario nome do Cliente.\n");
+	exit(-1);
 	}
   Cliente utente;
-  GuardaNome(argv, &utente);
-  /* printf("Olá %s\n",utente.NomeCliente);
-	 instead of printf, prefer using utils.h */
-	ourPutString("Ola ");
-	ourPutString(utente.NomeCliente);
-	ourPutChar('\n');
+  guardaNome(argv[1], &utente);
+	ourPutString("Quais sao os seus sintomas?\n");
+	pedeSintomas(&utente);
   return 0;
 }
