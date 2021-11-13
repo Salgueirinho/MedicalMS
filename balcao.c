@@ -1,53 +1,51 @@
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
+#include "balcao.h"
 
+int	getNumberFromEnv(char *env_name)
+{
+	char *value_str;
+	int	value;
+
+	value_str = getenv(env_name);
+	if (value_str)
+	{
+		value = atoi(value_str);
+		if (value <= 0)
+		{
+			printf("%s toma um valor nao positivo\n", env_name);
+			return -1;
+		}
+		else
+		{
+			return value;
+		}
+	}
+	else
+	{
+		printf("Erro ao ler %s\n", env_name);
+		return -1;
+	}
+}
 
 int	main(void)
 {
-	char	*max_clientes_str;
-	char	*max_medicos_str;
-  int 	max_clientes;
-	int		max_medicos;
-  char	comando[20];
+	char	comando[20];
+	ValoresMaximos valoresMaximos;
 
-	max_clientes_str = getenv("MAXCLIENTES");
-	if (max_clientes_str)
-	{
-		max_clientes = atoi(max_clientes_str);
-		if (max_clientes <= 0)
-		{
-			printf("MAXCLIENTES toma um valor nao positivo");
-			return -1;
-		}
-	}
-	else
-	{
-		printf("Erro ao ler MAXCLIENTES\n");
+	valoresMaximos.max_clientes = getNumberFromEnv("MAXCLIENTES");
+	if (valoresMaximos.max_clientes <= 0)
 		return -1;
-	}
 
-	max_medicos_str = getenv("MAXMEDICOS");
-	if (max_medicos_str)
-	{
-		max_medicos = atoi(max_medicos_str);
-		if (max_medicos <= 0)
-		{
-			printf("MAXMEDICOS toma um valor nao positivo");
-			return -1;
-		}
-	}
-	else
-	{
-		printf("Erro ao ler MAXMEDICOS\n");
-		return -1;
-	}
+	valoresMaximos.max_medicos = getNumberFromEnv("MAXMEDICOS");
+	if (valoresMaximos.max_medicos <= 0)
+		return -2;
 
-  while(strcmp(str,"encerra"))
+  while(strcmp(comando, "encerra"))
 	{
     fflush(stdout);
-    scanf("%20s",str);
+    scanf("%20s", comando);
   }
 	return 0;
 }
