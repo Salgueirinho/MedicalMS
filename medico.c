@@ -3,7 +3,7 @@
 #include "utils.h"
 
 void	guardaNome(char* nome, pMedico medico){
-	medico->nomeMedico = nome;
+	medico->nome_medico = nome;
 }
 
 void	guardaEspecialidade(char *especialidade, pMedico medico)

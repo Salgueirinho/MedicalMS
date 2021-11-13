@@ -2,7 +2,7 @@
 #define MEDICO_H
 
 typedef struct {
-  char *nomeMedico;
+  char *nome_medico;
   char *especialidade;
 } Medico, *pMedico;
 

@@ -2,7 +2,7 @@
 #define CLIENTE_H
 
 typedef struct {
-  char *nomeCliente;
+  char *nome_cliente;
   char sintomas[255];
 } Cliente, *pCliente;
 

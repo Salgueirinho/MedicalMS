@@ -4,7 +4,7 @@
 #include "utils.h"
 
 void guardaNome(char* nome, pCliente utente){
-	utente->nomeCliente = nome;
+	utente->nome_cliente = nome;
 }
 
 void pedeSintomas(pCliente utente){
