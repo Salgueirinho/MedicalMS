@@ -16,6 +16,11 @@ int	main(void)
 	if (max_clientes_str)
 	{
 		max_clientes = atoi(max_clientes_str);
+		if (max_clientes <= 0)
+		{
+			printf("MAXCLIENTES toma um valor nao positivo");
+			return -1;
+		}
 	}
 	else
 	{
@@ -27,6 +32,11 @@ int	main(void)
 	if (max_medicos_str)
 	{
 		max_medicos = atoi(max_medicos_str);
+		if (max_medicos <= 0)
+		{
+			printf("MAXMEDICOS toma um valor nao positivo");
+			return -1;
+		}
 	}
 	else
 	{
@@ -34,7 +44,7 @@ int	main(void)
 		return -1;
 	}
 
-  while(strcmp(str,"encerra") != 0)
+  while(strcmp(str,"encerra"))
 	{
     fflush(stdout);
     scanf("%20s",str);
