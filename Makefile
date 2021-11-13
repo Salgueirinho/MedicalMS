@@ -15,7 +15,7 @@ cliente: utils.o
 
 balcao:
 
-medico:
+medico: utils.o
 
 clean:
 	@rm -f $(OBJECTS)
