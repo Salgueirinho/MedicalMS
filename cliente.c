@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "cliente.h"
 #include "utils.h"
 
@@ -16,9 +17,12 @@ int main(int argc, char* argv[]){
 		ourPutString("Faltam argumentos de entrada: necessario nome do Cliente.\n");
 	exit(-1);
 	}
-  Cliente utente;
-  guardaNome(argv[1], &utente);
-	ourPutString("Quais sao os seus sintomas?\n");
-	pedeSintomas(&utente);
+	else
+	{
+  	Cliente utente;
+	  guardaNome(argv[1], &utente);
+		ourPutString("Quais sao os seus sintomas?\n");
+		pedeSintomas(&utente);
+	}
   return 0;
 }
