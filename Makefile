@@ -13,7 +13,7 @@ all:			$(OBJECTS)
 
 cliente: utils.o
 
-balcao:
+balcao: utils.o
 
 medico: utils.o
 
