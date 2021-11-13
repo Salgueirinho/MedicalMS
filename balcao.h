@@ -1,4 +1,6 @@
 #ifndef BALCAO_H
 #define BALCAO_H
 
+#define MAX_FILA 5 // MAX UTENTES POR FILA POR ESPECIALIDADE
+
 #endif // BALCAO_H
