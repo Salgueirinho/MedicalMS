@@ -13,20 +13,13 @@ int	getNumberFromEnv(char *env_name)
 	{
 		value = atoi(value_str);
 		if (value <= 0)
-		{
 			printf("%s toma um valor nao positivo\n", env_name);
-			return -1;
-		}
 		else
-		{
 			return value;
-		}
 	}
 	else
-	{
 		printf("Erro ao ler %s\n", env_name);
-		return -1;
-	}
+	return -1;
 }
 
 int	main(void)
