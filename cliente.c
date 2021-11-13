@@ -5,9 +5,14 @@
 #include "utils.h"
 
 typedef struct{
-  char NomeCliente[40];
+	/*
+		Acho que faz sentido mudar NomeCliente[40] para *NomeCliente
+		pois o nome do cliente na pratica vai ser introduzido atraves
+		de parametros do main, ou seja, ja estara alocado.	
+	*/
+  char *NomeCliente;
   char Sintomas[255];
-}Cliente, *pCliente;
+} Cliente, *pCliente;
 
 void GuardaNome(char *argv[], pCliente utente){
   strcpy(utente->NomeCliente,"");
