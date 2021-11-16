@@ -50,6 +50,7 @@ int	callClassificador(char *sintomas)
 	close(fd[0]);
 	close(fd[1]);
 	waitpid(pid2, NULL, 0);
+	return 0;
 }
 
 int	getNumberFromEnv(char *env_name)
@@ -74,7 +75,7 @@ int	getNumberFromEnv(char *env_name)
 int	main(int argc, char *argv[])
 {
 	ValoresMaximos valoresMaximos;
-	char	comando[20];
+	//char	comando[20];
 	int		i;
 
 	i = 1;
