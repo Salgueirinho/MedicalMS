@@ -1,56 +1,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utils.h"
-#include "balcao.h"
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include "utils.h"
+#include "balcao.h"
 
-int	callClassificador(char *sintomas)
+int	callClassificador(void)
 {
-	int	fd[2];
-	int	pid1;
-	int	pid2;
+	char	str[40];
+	int		canal[2];
+	int		process;
 
-	if (pipe(fd) == -1)
+	pipe(canal);
+	process = fork();
+	if (process == 0)
 	{
-		return -1;
+		// child process
+		close(0);
+		dup(canal[0]);
+		close(canal[0]);
+		close(canal[1]);
+		execl("classificador", "classificador", NULL);
+		// if it gets here it's because something went wrong.
+		write(2, "Couldn't start up classificador\n", 32);
+		exit(1);
 	}
-
-	pid1 = fork();
-	if (pid1 < 0)
+	close(canal[0]);
+	while (strcmp(str, "#fim\n") != 0)
 	{
-		return -2;
+		// parent process
+		fflush(stdout);
+		fgets(str, sizeof(str) - 1, stdin);
+		write(canal[1], str, strlen(str));
 	}
-	else if (pid1 == 0)
-	{
-		dup2(fd[1], 1);
-		close(fd[0]);
-		close(fd[1]);
-		write(1, sintomas, ourStrLen(sintomas));
-		write(1, "\n", 1);
-		write(1, "#fim", 4);
-		write(1, "\n", 1);
-	}
-
-	pid2 = fork();
-	if (pid2 < 0)
-	{
-		return -3;
-	}
-	else if (pid2 == 0)
-	{
-		dup2(fd[0], 0);
-		close(fd[0]);
-		close(fd[1]);
-		execl("./classificador", "./classificador", NULL);
-	}
-	
-	close(fd[0]);
-	close(fd[1]);
-	waitpid(pid2, NULL, 0);
-	return 0;
+	return (0);
 }
 
 int	getNumberFromEnv(char *env_name)
@@ -72,13 +57,10 @@ int	getNumberFromEnv(char *env_name)
 	return -1;
 }
 
-int	main(int argc, char *argv[])
+int	main(void)
 {
 	ValoresMaximos valoresMaximos;
 	//char	comando[20];
-	int		i;
-
-	i = 1;
 
 	valoresMaximos.max_clientes = getNumberFromEnv("MAXCLIENTES");
 	if (valoresMaximos.max_clientes <= 0)
@@ -88,30 +70,6 @@ int	main(int argc, char *argv[])
 	if (valoresMaximos.max_medicos <= 0)
 		return -2;
 
-	// Primeira meta
-	if (argc < 2)
-		ourPutString("Nao foram indicados sintomas\n");
-	else
-	{
-		while (i < argc)
-		{
-			ourPutString("Para os sintomas introduzidos:\n - ");
-			ourPutString(argv[i]);
-			ourPutString("\nDeduzimos a especialidade e urgencia:\n - ");
-			callClassificador(argv[i]);
-			i++;
-		}
-	}
-	/*
-	
-	-- So na segunda meta! --
-	
-  while(strcmp(comando, "encerra"))
-	{
-    fflush(stdout);
-    scanf("%20s", comando);
-  }
-
-	*/
+	callClassificador();
 	return 0;
 }
