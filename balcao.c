@@ -7,7 +7,7 @@
 #include "utils.h"
 #include "balcao.h"
 
-int	callClassificador(void)
+static int	callClassificador(void)
 {
 	char	sintomas[40];
 	char	especialidade[40];
@@ -68,7 +68,7 @@ int	callClassificador(void)
 	return (0);
 }
 
-int	getNumberFromEnv(char *env_name)
+static int	getNumberFromEnv(char *env_name)
 {
 	char *value_str;
 	int	value;
@@ -83,7 +83,7 @@ int	getNumberFromEnv(char *env_name)
 			return value;
 	}
 	else
-		printf("Erro ao ler %s!\n", env_name);
+		printf("Erro ao ler variavel de ambiente $(%s)\n", env_name);
 	return -1;
 }
 
@@ -104,17 +104,23 @@ static void	setMaxValues(pValoresMaximos valoresMaximos)
 	valoresMaximos->max_clientes = getMaxClientes();
 	valoresMaximos->max_medicos = getMaxMedicos();
 	valoresMaximos->max_lugares = MAX_FILA;
+	valoresMaximos->max_especialidades = MAX_ESPECIALIDADES_DEFAULT;
 }
 
-static void parseCommand(char *comando)
+static void interpretCommand(char *comando)
 {
-	if (strcmp(comando, "utentes") == 0 ||
-			strcmp(comando, "especialistas") == 0 ||
-			strncmp(comando, "delut ", 6) == 0 ||
-			strncmp(comando, "delesp ", 7) == 0 ||
-			strncmp(comando, "freq ", 5) == 0 ||
-			strcmp(comando, "encerra") == 0)
-		printf("Comando valido!\n");
+	if (strcmp(comando, "utentes") == 0)
+		printf("O sistema de momento tem %d utentes.\n", 0);
+	else if (strcmp(comando, "especialistas") == 0)
+		printf("O sistema de momento tem %d especialistas.\n", 0);
+	else if (strncmp(comando, "delut ", 6) == 0)
+		printf("Este comando ainda nao faz nada!\n");
+	else if (strncmp(comando, "delesp ", 7) == 0)
+		printf("Este comando ainda nao faz nada!\n");
+	else if (strncmp(comando, "freq ", 5) == 0)
+		printf("Este comando ainda nao faz nada!\n");
+	else if (strcmp(comando, "encerra") == 0)
+		printf("O sistema vai encerrar dentro de momentos.\n");
 	else
 		printf("Comando invalido!\n");
 }
@@ -138,7 +144,7 @@ int	main(void)
 		if (strcmp(comando, "sintomas") == 0)
 			callClassificador();
 		else
-			parseCommand(comando);
+			interpretCommand(comando);
 	}
 	return 0;
 }

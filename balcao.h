@@ -1,8 +1,11 @@
 #ifndef BALCAO_H
 #define BALCAO_H
 
+// valores por omissao
+
 #define MAX_CLIENTES_DEFAULT 5
 #define MAX_MEDICOS_DEFAULT 5
+#define MAX_ESPECIALIDADES_DEFAULT 5
 #define MAX_FILA 5 // MAX UTENTES POR FILA POR ESPECIALIDADE
 
 typedef struct {
