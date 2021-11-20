@@ -1,21 +1,22 @@
 SOURCES = cliente.c	\
 					balcao.c	\
 					medico.c	\
-					*.o				\
 
 OBJECTS	= $(patsubst %.c, %, $(SOURCES))
+
+UTILS = utils.o
 
 FLAGS		= -Wall -Wextra -Werror
 
 CC			= gcc $(FLAGS)
 
-all:			$(OBJECTS)
+all:			$(OBJECTS) $(UTILS)
 
-cliente: utils.o
+cliente: $(UTILS)
 
-balcao: utils.o
+balcao: $(UTILS)
 
-medico: utils.o
+medico: $(UTILS)
 
 clean:
 	@rm -f $(OBJECTS)
