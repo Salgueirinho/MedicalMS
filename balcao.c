@@ -36,7 +36,7 @@ int	callClassificador(void)
 		close(p2[1]);
 		execl("classificador", "classificador", NULL);
 		// if it gets here it's because something went wrong.
-		if (write(2, "Couldn't start up classificador\n", 32) == -1)
+		if (write(2, "Erro ao executar Classificador\n", 31) == -1)
 			return (4);
 		exit(1);
 	}
@@ -48,6 +48,7 @@ int	callClassificador(void)
 		do
 		{
 			bytes_read = 0;
+			printf("sintomas: ");
 			fgets(sintomas, sizeof(sintomas) - 1, stdin);
 			if (write(p1[1], sintomas, strlen(sintomas)) == -1)
 				return (5);
@@ -82,23 +83,47 @@ int	getNumberFromEnv(char *env_name)
 			return value;
 	}
 	else
-		printf("Erro ao ler %s\n", env_name);
+		printf("Erro ao ler %s!\n", env_name);
 	return -1;
+}
+
+static int	getMaxClientes(void)
+{
+	int	n = getNumberFromEnv("MAXCLIENTES");
+	return n > 0? n : MAX_CLIENTES_DEFAULT;
+}
+
+static int	getMaxMedicos(void)
+{
+	int	n = getNumberFromEnv("MAXMEDICOS");
+	return n > 0? n : MAX_MEDICOS_DEFAULT;
+}
+
+static void	setMaxValues(pValoresMaximos valoresMaximos)
+{
+	valoresMaximos->max_clientes = getMaxClientes();
+	valoresMaximos->max_medicos = getMaxMedicos();
+	valoresMaximos->max_lugares = MAX_FILA;
 }
 
 int	main(void)
 {
 	ValoresMaximos valoresMaximos;
-	//char	comando[20];
-
-	valoresMaximos.max_clientes = getNumberFromEnv("MAXCLIENTES");
-	if (valoresMaximos.max_clientes <= 0)
-		return -1;
-
-	valoresMaximos.max_medicos = getNumberFromEnv("MAXMEDICOS");
-	if (valoresMaximos.max_medicos <= 0)
-		return -2;
-
-	callClassificador();
+	char	comando[40];
+	int	bytes_read;
+	setMaxValues(&valoresMaximos);
+	while (strcmp(comando, "encerra") != 0)
+	{
+		ourPutString("comando: ");
+		bytes_read = read(0, comando, 40);
+		if (bytes_read == -1)
+		{
+			printf("Ocorreu um erro ao ler o comando!\n");
+			return (-1);
+		}
+		comando[bytes_read - 1] = '\0';
+		if (strcmp(comando, "sintomas") == 0)
+			callClassificador();
+	}
 	return 0;
 }
