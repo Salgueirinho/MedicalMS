@@ -9,31 +9,60 @@
 
 int	callClassificador(void)
 {
-	char	str[40];
-	int		canal[2];
-	int		process;
+	char	sintomas[40];
+	char	especialidade[40];
+	int		p1[2];
+	int		p2[2];
+	int		pid;
+	int		bytes_read;
 
-	pipe(canal);
-	process = fork();
-	if (process == 0)
+	if (pipe(p1) == -1)
+		return (1);
+	if (pipe(p2) == -1)
+		return (2);
+	pid = fork();
+	if (pid == -1)
+		return (3);
+	else if (pid == 0)
 	{
-		// child process
+		// child process - reads from classificador
+		close(p1[1]);
+		close(p2[0]);
 		close(0);
-		dup(canal[0]);
-		close(canal[0]);
-		close(canal[1]);
+		dup(p1[0]);
+		close(1);
+		dup(p2[1]);
+		close(p1[0]);
+		close(p2[1]);
 		execl("classificador", "classificador", NULL);
 		// if it gets here it's because something went wrong.
-		write(2, "Couldn't start up classificador\n", 32);
+		if (write(2, "Couldn't start up classificador\n", 32) == -1)
+			return (4);
 		exit(1);
 	}
-	close(canal[0]);
-	while (strcmp(str, "#fim\n") != 0)
+	else
 	{
-		// parent process
-		fflush(stdout);
-		fgets(str, sizeof(str) - 1, stdin);
-		write(canal[1], str, strlen(str));
+		// parent process - writes to classificador
+		close(p1[0]);
+		close(p2[1]);
+		do
+		{
+			bytes_read = 0;
+			fgets(sintomas, sizeof(sintomas) - 1, stdin);
+			if (write(p1[1], sintomas, strlen(sintomas)) == -1)
+				return (5);
+			if (strcmp(sintomas, "#fim\n") != 0)
+			{
+				bytes_read = read(p2[0], especialidade, sizeof(especialidade) - 1);
+				//if (bytes_read = -1)
+				//	return (6);
+				especialidade[bytes_read - 1] = '\0';
+				//fflush(stdout);
+				printf("%s\n", especialidade);
+			}
+		} while (strcmp(sintomas, "#fim\n") != 0);
+		close(p1[1]);
+		close(p2[0]);
 	}
 	return (0);
 }
