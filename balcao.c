@@ -48,7 +48,7 @@ int	callClassificador(void)
 		do
 		{
 			bytes_read = 0;
-			printf("sintomas: ");
+			ourPutString("[admin] sintomas: ");
 			fgets(sintomas, sizeof(sintomas) - 1, stdin);
 			if (write(p1[1], sintomas, strlen(sintomas)) == -1)
 				return (5);
@@ -106,6 +106,19 @@ static void	setMaxValues(pValoresMaximos valoresMaximos)
 	valoresMaximos->max_lugares = MAX_FILA;
 }
 
+static void parseCommand(char *comando)
+{
+	if (strcmp(comando, "utentes") == 0 ||
+			strcmp(comando, "especialistas") == 0 ||
+			strncmp(comando, "delut ", 6) == 0 ||
+			strncmp(comando, "delesp ", 7) == 0 ||
+			strncmp(comando, "freq ", 5) == 0 ||
+			strcmp(comando, "encerra") == 0)
+		printf("Comando valido!\n");
+	else
+		printf("Comando invalido!\n");
+}
+
 int	main(void)
 {
 	ValoresMaximos valoresMaximos;
@@ -114,7 +127,7 @@ int	main(void)
 	setMaxValues(&valoresMaximos);
 	while (strcmp(comando, "encerra") != 0)
 	{
-		ourPutString("comando: ");
+		ourPutString("[admin] comando: ");
 		bytes_read = read(0, comando, 40);
 		if (bytes_read == -1)
 		{
@@ -124,6 +137,8 @@ int	main(void)
 		comando[bytes_read - 1] = '\0';
 		if (strcmp(comando, "sintomas") == 0)
 			callClassificador();
+		else
+			parseCommand(comando);
 	}
 	return 0;
 }
