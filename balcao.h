@@ -41,10 +41,10 @@
 */
 
 typedef struct {
-	int	max_clientes;				// N
-	int	max_medicos;				// M
-	int	max_especialidades;	// X
-	int	max_lugares;				// Y
+	int	max_clientes;	
+	int	max_medicos;
+	int	max_especialidades;
+	int	max_lugares;
 } ValoresMaximos, *pValoresMaximos;
 
 #endif // BALCAO_H

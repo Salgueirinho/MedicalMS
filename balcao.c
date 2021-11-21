@@ -111,9 +111,8 @@ static int	callClassificador(void)
 			{
 				if ((bytes_read = read(p2[0], especialidade, sizeof(especialidade) - 1)) == -1)
 					return (8);
-				especialidade[bytes_read - 1] = '\0';
+				especialidade[bytes_read] = '\0';
 				ourPutString(especialidade);
-				ourPutString("\n");
 			}
 		} while (strcmp(sintomas, "#fim\n") != 0);
 		close(p1[1]);
@@ -155,7 +154,7 @@ static int	getNumberFromEnv(const char *env_name)
 			ourPutString("toma um valor não positivo\n");
 		}
 		else
-			return value;
+			return (value);
 	}
 	else
 	{
@@ -163,7 +162,7 @@ static int	getNumberFromEnv(const char *env_name)
 		ourPutString(env_name);
 		ourPutString(")\n");
 	}
-	return -1;
+	return (-1);
 }
 
 /*
@@ -183,7 +182,7 @@ static int	getNumberFromEnv(const char *env_name)
 static int	getMax(const char *name, const int default_value)
 {
 	int	n = getNumberFromEnv(name);
-	return n > 0 ? n : default_value;
+	return (n > 0 ? n : default_value);
 }
 
 /*
@@ -240,19 +239,24 @@ int	main(void)
 
 	if (balcaoIsRunning((int) getpid()))
 	{
+<<<<<<< HEAD
 		ourPutString("Já existe um balcão em execução!\n");
 		return (-1);
+=======
+		ourPutString("Ja existe um balcao em execucao!\n");
+		return (1);
+>>>>>>> bad5a25d341ac1c92ff1985ccf26d4c66afd95b8
 	}
 
 	setMaxValues(&valoresMaximos);
 	while (strcmp(comando, "encerra") != 0)
 	{
 		ourPutString("[admin] comando: ");
-		bytes_read = read(0, comando, 40);
+		bytes_read = read(0, comando, sizeof(comando) - 1);
 		if (bytes_read == -1)
 		{
 			ourPutString("Ocorreu um erro ao ler o comando!\n");
-			return (-1);
+			return (2);
 		}
 		comando[bytes_read - 1] = '\0';
 		if (strcmp(comando, "sintomas") == 0)
@@ -260,5 +264,5 @@ int	main(void)
 		else
 			interpretCommand(comando);
 	}
-	return 0;
+	return (0);
 }

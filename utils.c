@@ -18,6 +18,11 @@
 #include <dirent.h>
 #include <stdlib.h>
 
+void	ourPutChar(const char c)
+{
+	write(1, &c, 1);
+}
+
 /*
 
 	void	ourPutString(const char *str)
@@ -89,7 +94,9 @@ bool balcaoIsRunning(const int pid)
 	int	fd;
 
 	if (!(dir = opendir("/proc")))
-		return -1;
+	{
+		exit(1);
+	}
 
 	while((ent = readdir(dir)) != NULL)
 	{
@@ -104,7 +111,7 @@ bool balcaoIsRunning(const int pid)
 				strcpy(buf, "\0");
 				if (read(fd, buf, sizeof(buf)) != -1)
 				{
-					if (!strncmp(buf, "./balcao", 8))
+					if (strncmp(buf, "./balcao", 8) == 0)
 					{
 						close(fd);
 						closedir(dir);
