@@ -239,8 +239,6 @@ int	main(void)
 
 	if (balcaoIsRunning((int) getpid()))
 	{
-		ourPutString("Já existe um balcão em execução!\n");
-		return (-1);
 		ourPutString("Ja existe um balcao em execucao!\n");
 		return (1);
 	}
