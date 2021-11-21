@@ -1,3 +1,16 @@
+/*
+
+	 Trabalho pratico realizado por:
+	 - Goncalo Salgueirinho - a2020142627@isec.pt
+	 - Kylix Afonso - a2020146228@isec.pt
+	 Docente responsavel pela unidade curricular:
+	 - prof. Joao Duraes
+	 Unidade curricular:
+	 - Sistemas Operativos
+	 Insituto Superior de Engenharia de Coimbra
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +19,29 @@
 #include <sys/ioctl.h>
 #include "utils.h"
 #include "balcao.h"
+
+/*
+
+	 static int	callClassificador(void)
+
+	 - definicao: funcao que executa o classificador e permite a comunicacao
+	 com ela atraves do stdin/stdout (para tel exige o uso de dois pipes anonimos).
+	 - return value: inteiro que pode tomar um de varios valores:
+	 0)
+	 1) o primeiro pipe falhou (aquele que e responsavel pela leitura do
+	 output do classificador);
+	 2) o segundo pipe falhou (aquele que e responsavel pela escrita de
+	 sintomas no classificador);
+	 3) o fork falhou;
+	 4) o classificador falhou a executar e o write para o stderr tambem
+	 falhou;
+	 5) o classificador falhou;
+	 6) o write dos sintomas para o pipe de escrita para o classificador
+	 falhou;
+	 7) o read da especialidade e urgencia do pipe de leitura do
+	 classificador falhou.
+
+*/
 
 static int	callClassificador(void)
 {
@@ -25,7 +61,15 @@ static int	callClassificador(void)
 		return (3);
 	else if (pid == 0)
 	{
-		// child process - reads from classificador
+		/*
+
+			 Processo Crianca - executa o classificador, e
+			 tambem responsavel por abrir a entrada do pipe
+			 de leitura e a saida do pipe de escrita, para
+			 alem de fechar as entradas e saidas nao necessarias
+			 do mesmo 
+
+		*/
 		close(p1[1]);
 		close(p2[0]);
 		close(0);
@@ -35,14 +79,24 @@ static int	callClassificador(void)
 		close(p1[0]);
 		close(p2[1]);
 		execl("classificador", "classificador", NULL);
-		// if it gets here it's because something went wrong.
+		/*
+
+			 Se durante a execucao do codigo, o programa chega aqui,
+			 e porque houve algum problema a tentar executar o './classificador'
+
+		*/
 		if (write(2, "Erro ao executar Classificador\n", 31) == -1)
 			return (4);
-		exit(1);
+		return (5);
 	}
 	else
 	{
-		// parent process - writes to classificador
+		/*
+
+			 Processo Pai - envia input ao classificador
+			 e recebe output do mesmo
+
+		*/
 		close(p1[0]);
 		close(p2[1]);
 		do
@@ -51,14 +105,12 @@ static int	callClassificador(void)
 			ourPutString("[admin] sintomas: ");
 			fgets(sintomas, sizeof(sintomas) - 1, stdin);
 			if (write(p1[1], sintomas, strlen(sintomas)) == -1)
-				return (5);
+				return (6);
 			if (strcmp(sintomas, "#fim\n") != 0)
 			{
-				bytes_read = read(p2[0], especialidade, sizeof(especialidade) - 1);
-				//if (bytes_read = -1)
-				//	return (6);
+				if ((bytes_read = read(p2[0], especialidade, sizeof(especialidade) - 1)) == -1)
+					return (7);
 				especialidade[bytes_read - 1] = '\0';
-				//fflush(stdout);
 				printf("%s\n", especialidade);
 			}
 		} while (strcmp(sintomas, "#fim\n") != 0);
@@ -67,6 +119,24 @@ static int	callClassificador(void)
 	}
 	return (0);
 }
+
+/*
+
+	 static int	getNumberFromEnv(const char *env_name)
+
+	 - definicao: funcao responsavel pela obtencao de valores
+	 numericos positivos de entre as variaveis de ambiente.
+	 - return value: inteiro que toma valores entre [-1, 0]
+	 onde o 0 significa que nao houveram erros durante a
+	 execucao da funcao e o -1 significa que:
+	 1) o nome da variavel de ambiente passada por
+	 argumento nao existe;
+	 2) o valor encontrado nao e numerico;
+	 3) o valor encontrado e numerico nao positivo.
+	 - parametro: nome da variavel de ambiente da qual
+	 queremos obter um valor numerico positivo.
+
+*/
 
 static int	getNumberFromEnv(const char *env_name)
 {
@@ -87,11 +157,35 @@ static int	getNumberFromEnv(const char *env_name)
 	return -1;
 }
 
-static int	getMax(const char *name, const int val)
+/*
+
+	 static int	getMax(const char *name, const int default_value)
+
+	 - definicao: funcao responsavel por verificar se getNumberFromEnv(name)
+	 e inteiro positivo, caso seja, devolve esse valor, senao, devolve
+	 o default_value.
+	 - return value: inteiro igual a getNumberFromEnv(name) caso seja positivo ou
+	 o valor do seu proprio argumento default_value, caso a condicao anterior nao
+	 se verifique.
+	 - parametros: nome da variavel de ambiente e valor por omissao.
+
+*/
+
+static int	getMax(const char *name, const int default_value)
 {
 	int	n = getNumberFromEnv(name);
-	return n > 0 ? n : val;
+	return n > 0 ? n : default_value;
 }
+
+/*
+
+	 static void	setMaxValues(pValoresMaximos valoresMaximos)
+
+	 - definicao: funcao que atribui os valores dos membros do struct
+	 valoresMaximos, p.e. max_clientes ou max_medicos.
+	 - parametro: ponteiro para o struct valoresMaximos.
+
+*/
 
 static void	setMaxValues(pValoresMaximos valoresMaximos)
 {
@@ -100,6 +194,16 @@ static void	setMaxValues(pValoresMaximos valoresMaximos)
 	valoresMaximos->max_lugares = MAX_FILA;
 	valoresMaximos->max_especialidades = MAX_ESPECIALIDADES_DEFAULT;
 }
+
+/*
+
+	 static void	interpretCommand(const char *comando)
+
+	 - definicao: funcao que consoante o comando recebido por argumento
+	 mete uma frase apropriada em stdout.
+	 - parametro: string comando.
+
+*/
 
 static void interpretCommand(const char *comando)
 {

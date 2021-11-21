@@ -1,3 +1,16 @@
+/*
+
+	 Trabalho pratico realizado por:
+	 - Goncalo Salgueirinho - a2020142627@isec.pt
+	 - Kylix Afonso - a2020146228@isec.pt
+	 Docente responsavel pela unidade curricular:
+	 - prof. Joao Duraes
+	 Unidade curricular:
+	 - Sistemas Operativos
+	 Insituto Superior de Engenharia de Coimbra
+
+*/
+
 #include <unistd.h>
 #include <stdbool.h>
 #include <fcntl.h>
@@ -5,30 +18,31 @@
 #include <dirent.h>
 #include <stdlib.h>
 
-int		ourStrLen(const char *str)
-{
-	/*
-		this is our version of strlen:
-		- avoiding library function calls
-	*/
-	int	len;
+/*
 
-	len = 0;
-	while (str[len])
-	{
-		len++;
-	}
-	return (len);
-}
+	void	ourPutString(const char *str)
+
+	- definicao: funcao que coloca uma string passada por argumento em stdout
+	- parametro: string a mostrr
+
+*/
 
 void	ourPutString(const char *str)
 {
-	/*
-		this is our version of putstring:
-		- using system function calls
-	*/
-	write(1, str, ourStrLen(str));
+	write(1, str, strlen(str));
 }
+
+/*
+
+	static bool isNumber(const char *str)
+
+	- definicao: funcao que verifica se uma string e totalmente numerica.
+	- return value:
+	false) caso a string nao seja totalmente numerica;
+	true) caso a string seja totalmente numerica.
+	- parametro: string a verificar.
+
+*/
 
 static bool	isNumber(const char *str)
 {
@@ -44,6 +58,29 @@ static bool	isNumber(const char *str)
 	return (true);
 }
 
+/*
+
+	bool balcaoIsRunning(const int pid)
+
+	definicao: funcao que verifica se existe algum ./balcao em execucao,
+	ao verificar o conteudo do ficheiro "cmdline" nas pastas de todos os
+	PID's existentes em /proc/
+	return value:
+	true) caso seja encontrado um /proc/PID/cmdline com conteudo inicial
+	"./balcao" onde PID pode tomar varios valores;
+	false: caso nao seja encontrado um /proc/PID/cmdline com conteudo
+	inicial "./balcao".
+	parametros: inteiro PID que no caso do balcao vai receber argumento
+	(int) getpid() e no caso de todos os outros ficheiros vai receber o
+	valor 0, isto acontece porque caso nao passassemos o PID do balcao
+	na chamada da funcao e posteriormente a usassemos para verificar que o
+	PID da pasta pela qual estamos a iterar e de facto nao igual ao PID
+	passado, o balcao nunca iria conseguir executar (em palavras simples,
+	sem o PID, quando executassemos o balcao, ele iria encontrar-se a si
+	proprio e isso iria impedir o balcao de alguma vez executar).
+
+*/
+
 bool balcaoIsRunning(const int pid)
 {
 	DIR* dir;
@@ -52,7 +89,7 @@ bool balcaoIsRunning(const int pid)
 	int	fd;
 
 	if (!(dir = opendir("/proc")))
-    return -1;
+		return -1;
 
 	while((ent = readdir(dir)) != NULL)
 	{
@@ -61,20 +98,20 @@ bool balcaoIsRunning(const int pid)
 			strcat(buf, "/proc/");
 			strcat(buf, ent->d_name);
 			strcat(buf, "/cmdline");
-      fd = open(buf, O_RDONLY);
-      if (fd)
+			fd = open(buf, O_RDONLY);
+			if (fd)
 			{
 				strcpy(buf, "\0");
 				if (read(fd, buf, sizeof(buf)) != -1)
 				{
 					if (!strncmp(buf, "./balcao", 8))
 					{
-    				close(fd);
-    				closedir(dir);
+						close(fd);
+						closedir(dir);
 						return (true);
 					}
 				}
-   			close(fd);
+				close(fd);
 			}
 		}
 		strcpy(buf, "");
