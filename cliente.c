@@ -12,7 +12,6 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include "cliente.h"
 #include "utils.h"
 
@@ -48,12 +47,12 @@ int main(int argc, char* argv[]){
 	if (!balcaoIsRunning(0))
 	{
 		ourPutString("O Balcao nao esta em execucao, logo o Cliente tambem nao podera iniciar!\n");
-		return (-1);
+		return (1);
 	}
 	if(argc < 2)
 	{
 		ourPutString("Faltam argumentos de entrada: necessario nome do Cliente.\n");
-		exit(-1);
+		return (2);
 	}
 	else
 	{
@@ -62,5 +61,5 @@ int main(int argc, char* argv[]){
 		ourPutString("Quais sao os seus sintomas?\n");
 		pedeSintomas(&utente);
 	}
-	return 0;
+	return (0);
 }

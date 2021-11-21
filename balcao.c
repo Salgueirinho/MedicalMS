@@ -11,12 +11,9 @@
 
 */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
-#include <sys/ioctl.h>
 #include "utils.h"
 #include "balcao.h"
 
@@ -36,9 +33,10 @@
 	 4) o classificador falhou a executar e o write para o stderr tambem
 	 falhou;
 	 5) o classificador falhou;
-	 6) o write dos sintomas para o pipe de escrita para o classificador
+	 6) o read dos sintomas para o stdin falhou;
+	 7) o write dos sintomas para o pipe de escrita para o classificador
 	 falhou;
-	 7) o read da especialidade e urgencia do pipe de leitura do
+	 8) o read da especialidade e urgencia do pipe de leitura do
 	 classificador falhou.
 
 */
@@ -103,15 +101,19 @@ static int	callClassificador(void)
 		{
 			bytes_read = 0;
 			ourPutString("[admin] sintomas: ");
-			fgets(sintomas, sizeof(sintomas) - 1, stdin);
-			if (write(p1[1], sintomas, strlen(sintomas)) == -1)
+			if ((bytes_read = read(0, &sintomas, sizeof(sintomas) - 1)) == -1)
 				return (6);
+			sintomas[bytes_read] = '\0';
+			bytes_read = 0;
+			if (write(p1[1], sintomas, strlen(sintomas)) == -1)
+				return (7);
 			if (strcmp(sintomas, "#fim\n") != 0)
 			{
 				if ((bytes_read = read(p2[0], especialidade, sizeof(especialidade) - 1)) == -1)
-					return (7);
+					return (8);
 				especialidade[bytes_read - 1] = '\0';
-				printf("%s\n", especialidade);
+				ourPutString(especialidade);
+				ourPutString("\n");
 			}
 		} while (strcmp(sintomas, "#fim\n") != 0);
 		close(p1[1]);
@@ -148,12 +150,19 @@ static int	getNumberFromEnv(const char *env_name)
 	{
 		value = atoi(value_str);
 		if (value <= 0)
-			printf("%s toma um valor nao positivo\n", env_name);
+		{
+			ourPutString(env_name);
+			ourPutString("toma um valor nao positivo\n");
+		}
 		else
 			return value;
 	}
 	else
-		printf("Erro ao ler variavel de ambiente $(%s)\n", env_name);
+	{
+		ourPutString("Erro ao lera a variavel de ambiente $(");
+		ourPutString(env_name);
+		ourPutString(")\n");
+	}
 	return -1;
 }
 
@@ -208,19 +217,19 @@ static void	setMaxValues(pValoresMaximos valoresMaximos)
 static void interpretCommand(const char *comando)
 {
 	if (strcmp(comando, "utentes") == 0)
-		printf("O sistema de momento tem %d utentes.\n", 0);
+		ourPutString("O sistema de momento tem 0 utentes.\n");
 	else if (strcmp(comando, "especialistas") == 0)
-		printf("O sistema de momento tem %d especialistas.\n", 0);
+		ourPutString("O sistema de momento tem 0 especialistas.\n");
 	else if (strncmp(comando, "delut ", 6) == 0)
-		printf("Este comando ainda nao faz nada!\n");
+		ourPutString("O funcionamento deste comando ainda nao se encontra implementado!\n");
 	else if (strncmp(comando, "delesp ", 7) == 0)
-		printf("Este comando ainda nao faz nada!\n");
+		ourPutString("O funcionamento deste comando ainda nao se encontra implementado!\n");
 	else if (strncmp(comando, "freq ", 5) == 0)
-		printf("Este comando ainda nao faz nada!\n");
+		ourPutString("O funcionamento deste comando ainda nao se encontra implementado!\n");
 	else if (strcmp(comando, "encerra") == 0)
-		printf("O sistema vai encerrar dentro de momentos.\n");
+		ourPutString("O sistema vai encerrar dentro de momentos.\n");
 	else
-		printf("Comando invalido!\n");
+		ourPutString("Comando invalido!\n");
 }
 
 int	main(void)
@@ -231,7 +240,7 @@ int	main(void)
 
 	if (balcaoIsRunning((int) getpid()))
 	{
-		printf("Ja existe um balcao em execucao!\n");
+		ourPutString("Ja existe um balcao em execucao!\n");
 		return (-1);
 	}
 
@@ -242,7 +251,7 @@ int	main(void)
 		bytes_read = read(0, comando, 40);
 		if (bytes_read == -1)
 		{
-			printf("Ocorreu um erro ao ler o comando!\n");
+			ourPutString("Ocorreu um erro ao ler o comando!\n");
 			return (-1);
 		}
 		comando[bytes_read - 1] = '\0';

@@ -16,6 +16,8 @@
 
 /*
 
+	 Medico:
+
 	 Esta struct tem como objetivo possibilitar centralizar a informacao
 	 sobre cada medico diferente, isto inclui:
 	 - o nome do medico, que permitira a diferenciacao de medico para medico,

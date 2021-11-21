@@ -28,6 +28,8 @@
 
 /*
 
+	 ValoresMaximos:
+
 	 Esta struct tem como objetivo possibilitar a centralizacao de toda a
 	 informacao relativa aos valores maximos, definidos no momento de Runtime:
 	 - max_clientes: numero maximo de clientes diferentes;

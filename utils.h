@@ -18,12 +18,12 @@
 
 /*
 
-	 Este header file tera os prototipos das funcoes "helper" que serao
-	 usados ao longo do programa.
+	 Esta header tera os prototipos das funcoes "helper" que serao usados
+	 ao longo do programa.
 
 */
 
-void	ourPutString(char *str);
-bool balcaoIsRunning(int pid); 
+void	ourPutString(const char *str);
+bool balcaoIsRunning(const int pid); 
 
 #endif

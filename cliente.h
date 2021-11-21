@@ -16,6 +16,8 @@
 
 /*
 
+	 Cliente:
+
 	 Esta struct tem como objetivo possibilitar centralizar a informacao
 	 sobre cada cliente diferente (ate ao momento essa informacao so inclui
 	 o nome do cliente - que tem como objetivo possiblitar a diferenciacao de
