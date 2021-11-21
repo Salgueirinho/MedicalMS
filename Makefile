@@ -19,6 +19,6 @@ balcao: $(UTILS)
 medico: $(UTILS)
 
 clean:
-	@rm -f $(OBJECTS)
+	@rm -f $(OBJECTS) $(UTILS)
 
 re:				clean all

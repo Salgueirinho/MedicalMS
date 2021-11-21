@@ -23,6 +23,7 @@
 
 */
 
+void	ourPutChar(const char c);
 void	ourPutString(const char *str);
 bool balcaoIsRunning(const int pid); 
 

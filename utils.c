@@ -18,6 +18,11 @@
 #include <dirent.h>
 #include <stdlib.h>
 
+void	ourPutChar(const char c)
+{
+	write(1, &c, 1);
+}
+
 /*
 
 	void	ourPutString(const char *str)
