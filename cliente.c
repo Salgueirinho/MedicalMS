@@ -11,7 +11,7 @@
 
 */
 
-#include <stdio.h>
+#include <unistd.h>
 #include "cliente.h"
 #include "utils.h"
 
@@ -39,8 +39,13 @@ void guardaNome(char* nome, pCliente utente){
 
 */
 
-void pedeSintomas(pCliente utente){
-	scanf("%255[^\n]", utente->sintomas);
+int pedeSintomas(pCliente utente){
+	int	bytes_read = -1;
+
+	if ((bytes_read = read(0, utente->sintomas, 255)) == -1)
+		return (1);
+	utente->sintomas[bytes_read - 1] = '\0';
+	return (0);
 }
 
 int main(int argc, char* argv[]){
