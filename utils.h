@@ -18,7 +18,7 @@
 
 /*
 
-	 Esta header tera os prototipos das funcoes "helper" que serao usados
+	 Esta header tera os protótipos das funções "helper" que serão usados
 	 ao longo do programa.
 
 */

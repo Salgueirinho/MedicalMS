@@ -18,15 +18,15 @@
 
 	 Medico:
 
-	 Esta struct tem como objetivo possibilitar centralizar a informacao
-	 sobre cada medico diferente, isto inclui:
-	 - o nome do medico, que permitira a diferenciacao de medico para medico,
-	 porem, sera possivel ter dois medicos com o mesmo nome;
-	 - a especialidade do medico, que ira servir de referencia para o inicio
-	 de uma comunicacao cliente (que a partida, ja sabera a especialidade e
-	 urgencia dos seus sintomas) - medico:
-	 - NOTA: existe a possibilidade de um medico ter uma especialidade nao
-	 existente no programa classificador e neste caso, ele nunca ira comunicar
+	 Esta struct tem como objetivo possibilitar centralizar a informação
+	 sobre cada médico diferente, isto inclui:
+	 - o nome do médico, que permitirá a diferenciação de médico para médico,
+	 porém, será possível ter dois médicos com o mesmo nome;
+	 - a especialidade do médico, que irá servir de referencia para o início
+	 de uma comunicação cliente (que à partida, já saberá a especialidade e
+	 urgência dos seus sintomas) - médico:
+	 - NOTA: existe a possibilidade de um médico ter uma especialidade não
+	 existente no programa classificador e neste caso, ele nunca irá comunicar
 	 com um cliente.
 
 */

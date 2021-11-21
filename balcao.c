@@ -1,10 +1,10 @@
 /*
 
-	 Trabalho pratico realizado por:
-	 - Goncalo Salgueirinho - a2020142627@isec.pt
+	 Trabalho prático realizado por:
+	 - Gonçalo Salgueirinho - a2020142627@isec.pt
 	 - Kylix Afonso - a2020146228@isec.pt
-	 Docente responsavel pela unidade curricular:
-	 - prof. Joao Duraes
+	 Docente responsável pela unidade curricular:
+	 - prof. João Durães
 	 Unidade curricular:
 	 - Sistemas Operativos
 	 Insituto Superior de Engenharia de Coimbra
@@ -21,16 +21,16 @@
 
 	 static int	callClassificador(void)
 
-	 - definicao: funcao que executa o classificador e permite a comunicacao
-	 com ela atraves do stdin/stdout (para tel exige o uso de dois pipes anonimos).
-	 - return value: inteiro que pode tomar um de varios valores:
+	 - definição: função que executa o classificador e permite a comunicação
+	 com ela através do stdin/stdout (para tal exige o uso de dois pipes anónimos).
+	 - return value: inteiro que pode tomar um de vários valores:
 	 0)
-	 1) o primeiro pipe falhou (aquele que e responsavel pela leitura do
+	 1) o primeiro pipe falhou (aquele que é responsável pela leitura do
 	 output do classificador);
-	 2) o segundo pipe falhou (aquele que e responsavel pela escrita de
+	 2) o segundo pipe falhou (aquele que é responsável pela escrita de
 	 sintomas no classificador);
 	 3) o fork falhou;
-	 4) o classificador falhou a executar e o write para o stderr tambem
+	 4) o classificador falhou a executar e o write para o stderr também
 	 falhou;
 	 5) o classificador falhou;
 	 6) o read dos sintomas para o stdin falhou;
@@ -61,10 +61,10 @@ static int	callClassificador(void)
 	{
 		/*
 
-			 Processo Crianca - executa o classificador, e
-			 tambem responsavel por abrir a entrada do pipe
-			 de leitura e a saida do pipe de escrita, para
-			 alem de fechar as entradas e saidas nao necessarias
+			 Processo Crianáa - executa o classificador, e
+			 tambem responsável por abrir a entrada do pipe
+			 de leitura e a saída do pipe de escrita, para
+			 além de fechar as entradas e saídas não necessárias
 			 do mesmo 
 
 		*/
@@ -79,8 +79,8 @@ static int	callClassificador(void)
 		execl("classificador", "classificador", NULL);
 		/*
 
-			 Se durante a execucao do codigo, o programa chega aqui,
-			 e porque houve algum problema a tentar executar o './classificador'
+			 Se durante a execução do código, o programa chega aqui,
+			 é porque houve algum problema a tentar executar o './classificador'
 
 		*/
 		if (write(2, "Erro ao executar Classificador\n", 31) == -1)
@@ -126,17 +126,17 @@ static int	callClassificador(void)
 
 	 static int	getNumberFromEnv(const char *env_name)
 
-	 - definicao: funcao responsavel pela obtencao de valores
-	 numericos positivos de entre as variaveis de ambiente.
+	 - definicao: função responsável pela obtenção de valores
+	 numéricos positivos de entre as variáveis de ambiente.
 	 - return value: inteiro que toma valores entre [-1, 0]
-	 onde o 0 significa que nao houveram erros durante a
-	 execucao da funcao e o -1 significa que:
-	 1) o nome da variavel de ambiente passada por
-	 argumento nao existe;
-	 2) o valor encontrado nao e numerico;
-	 3) o valor encontrado e numerico nao positivo.
-	 - parametro: nome da variavel de ambiente da qual
-	 queremos obter um valor numerico positivo.
+	 onde o 0 significa que não houveram erros durante a
+	 execução da função e o -1 significa que:
+	 1) o nome da variável de ambiente passada por
+	 argumento não existe;
+	 2) o valor encontrado não é numerico;
+	 3) o valor encontrado é numérico não positivo.
+	 - parâmetro: nome da variável de ambiente da qual
+	 queremos obter um valor numérico positivo.
 
 */
 
@@ -152,14 +152,14 @@ static int	getNumberFromEnv(const char *env_name)
 		if (value <= 0)
 		{
 			ourPutString(env_name);
-			ourPutString("toma um valor nao positivo\n");
+			ourPutString("toma um valor não positivo\n");
 		}
 		else
 			return value;
 	}
 	else
 	{
-		ourPutString("Erro ao lera a variavel de ambiente $(");
+		ourPutString("Erro ao ler a variável de ambiente $(");
 		ourPutString(env_name);
 		ourPutString(")\n");
 	}
@@ -170,13 +170,13 @@ static int	getNumberFromEnv(const char *env_name)
 
 	 static int	getMax(const char *name, const int default_value)
 
-	 - definicao: funcao responsavel por verificar se getNumberFromEnv(name)
-	 e inteiro positivo, caso seja, devolve esse valor, senao, devolve
+	 - definição: função responsável por verificar se getNumberFromEnv(name)
+	 é inteiro positivo, caso seja, devolve esse valor, senão, devolve
 	 o default_value.
 	 - return value: inteiro igual a getNumberFromEnv(name) caso seja positivo ou
-	 o valor do seu proprio argumento default_value, caso a condicao anterior nao
+	 o valor do seu próprio argumento default_value, caso a condição anterior não
 	 se verifique.
-	 - parametros: nome da variavel de ambiente e valor por omissao.
+	 - parâmetros: nome da variável de ambiente e valor por omissão.
 
 */
 
@@ -190,7 +190,7 @@ static int	getMax(const char *name, const int default_value)
 
 	 static void	setMaxValues(pValoresMaximos valoresMaximos)
 
-	 - definicao: funcao que atribui os valores dos membros do struct
+	 - definição: função que atribui os valores dos membros do struct
 	 valoresMaximos, p.e. max_clientes ou max_medicos.
 	 - parametro: ponteiro para o struct valoresMaximos.
 
@@ -208,9 +208,9 @@ static void	setMaxValues(pValoresMaximos valoresMaximos)
 
 	 static void	interpretCommand(const char *comando)
 
-	 - definicao: funcao que consoante o comando recebido por argumento
+	 - definição: função que consoante o comando recebido por argumento
 	 mete uma frase apropriada em stdout.
-	 - parametro: string comando.
+	 - parâmetro: string comando.
 
 */
 
@@ -221,15 +221,15 @@ static void interpretCommand(const char *comando)
 	else if (strcmp(comando, "especialistas") == 0)
 		ourPutString("O sistema de momento tem 0 especialistas.\n");
 	else if (strncmp(comando, "delut ", 6) == 0)
-		ourPutString("O funcionamento deste comando ainda nao se encontra implementado!\n");
+		ourPutString("O funcionamento deste comando ainda não se encontra implementado!\n");
 	else if (strncmp(comando, "delesp ", 7) == 0)
-		ourPutString("O funcionamento deste comando ainda nao se encontra implementado!\n");
+		ourPutString("O funcionamento deste comando ainda não se encontra implementado!\n");
 	else if (strncmp(comando, "freq ", 5) == 0)
-		ourPutString("O funcionamento deste comando ainda nao se encontra implementado!\n");
+		ourPutString("O funcionamento deste comando ainda não se encontra implementado!\n");
 	else if (strcmp(comando, "encerra") == 0)
 		ourPutString("O sistema vai encerrar dentro de momentos.\n");
 	else
-		ourPutString("Comando invalido!\n");
+		ourPutString("Comando inválido!\n");
 }
 
 int	main(void)
@@ -240,7 +240,7 @@ int	main(void)
 
 	if (balcaoIsRunning((int) getpid()))
 	{
-		ourPutString("Ja existe um balcao em execucao!\n");
+		ourPutString("Já existe um balcão em execução!\n");
 		return (-1);
 	}
 

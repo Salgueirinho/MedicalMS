@@ -22,8 +22,8 @@
 
 	void	ourPutString(const char *str)
 
-	- definicao: funcao que coloca uma string passada por argumento em stdout
-	- parametro: string a mostrr
+	- definição: função que coloca uma string passada por argumento em stdout
+	- parâmetro: string a mostrar
 
 */
 
@@ -36,11 +36,11 @@ void	ourPutString(const char *str)
 
 	static bool isNumber(const char *str)
 
-	- definicao: funcao que verifica se uma string e totalmente numerica.
+	- definição: função que verifica se uma string é totalmente numérica.
 	- return value:
-	false) caso a string nao seja totalmente numerica;
-	true) caso a string seja totalmente numerica.
-	- parametro: string a verificar.
+	false) caso a string não seja totalmente numérica;
+	true) caso a string seja totalmente numérica.
+	- parâmetro: string a verificar.
 
 */
 
@@ -62,22 +62,22 @@ static bool	isNumber(const char *str)
 
 	bool balcaoIsRunning(const int pid)
 
-	definicao: funcao que verifica se existe algum ./balcao em execucao,
-	ao verificar o conteudo do ficheiro "cmdline" nas pastas de todos os
+	definição: função que verifica se existe algum ./balcao em execução,
+	ao verificar o conteúdo do ficheiro "cmdline" nas pastas de todos os
 	PID's existentes em /proc/
 	return value:
-	true) caso seja encontrado um /proc/PID/cmdline com conteudo inicial
-	"./balcao" onde PID pode tomar varios valores;
-	false: caso nao seja encontrado um /proc/PID/cmdline com conteudo
+	true) caso seja encontrado um /proc/PID/cmdline com conteúdo inícial
+	"./balcao" onde PID pode tomar vários valores;
+	false: caso não seja encontrado um /proc/PID/cmdline com conteúdo
 	inicial "./balcao".
-	parametros: inteiro PID que no caso do balcao vai receber argumento
+	parâmetros: inteiro PID que no caso do balcão vai receber argumento
 	(int) getpid() e no caso de todos os outros ficheiros vai receber o
-	valor 0, isto acontece porque caso nao passassemos o PID do balcao
-	na chamada da funcao e posteriormente a usassemos para verificar que o
-	PID da pasta pela qual estamos a iterar e de facto nao igual ao PID
-	passado, o balcao nunca iria conseguir executar (em palavras simples,
-	sem o PID, quando executassemos o balcao, ele iria encontrar-se a si
-	proprio e isso iria impedir o balcao de alguma vez executar).
+	valor 0, isto acontece porque caso não passassemos o PID do balcão
+	na chamada da função e posteriormente a usassemos para verificar que o
+	PID da pasta pela qual estamos a iterar é de facto não igual ao PID
+	passado, o balcão nunca iria conseguir executar (em palavras simples,
+	sem o PID, quando executassemos o balcão, ele iria encontrar-se a si
+	próprio e isso iria impedir o balcão de alguma vez executar).
 
 */
 

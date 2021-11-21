@@ -19,9 +19,9 @@
 
 	 void guardaNome(char *nome, pMedico medico)
 
-	 definicao: funcao que guarda a string nome no lugar de nome_medico,
-	 que e membro da struct passada por ponteiro (medico).
-	 parametros: string nome e ponteiro para struct medico.
+	 definição: função que guarda a string nome no lugar de nome_medico,
+	 que é membro da struct passada por ponteiro (medico).
+	 parâmetros: string nome e ponteiro para struct medico.
 
 */
 
@@ -33,9 +33,9 @@ void	guardaNome(char* nome, pMedico medico){
 
 	 void guardaEspecialidade(char *especialidade, pMedico medico)
 
-	 definicao: funcao que guarda a string especialidade no lugar de especialidade,
-	 que e membro da struct passada por ponteiro (medico).
-	 parametros: string especialidade e ponteiro para struct medico.
+	 definição: função que guarda a string especialidade no lugar de especialidade,
+	 que é membro da struct passada por ponteiro (medico).
+	 parâmetros: string especialidade e ponteiro para struct medico.
 
 */
 
@@ -48,12 +48,12 @@ int	main(int argc, char *argv[])
 {
 	if (!balcaoIsRunning(0))
 	{
-		ourPutString("O Balcao nao esta em execucao, logo o Medico tambem nao podera iniciar!\n");
+		ourPutString("O Balcão não está em execução, logo o Médico tambem não poderá iniciar!\n");
 		return (-1);
 	}
 	if (argc < 3)
 	{
-		ourPutString("Faltam argumentos de entrada: necessario nome e especialidade do Medico.\n");
+		ourPutString("Faltam argumentos de entrada: necessário nome e especialidade do Médico.\n");
 		exit(-1);
 	}
 	else
