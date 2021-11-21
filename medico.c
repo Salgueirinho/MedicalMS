@@ -49,18 +49,11 @@ int	main(int argc, char *argv[])
 	if (!balcaoIsRunning(0))
 	{
 		ourPutString("O Balcão não está em execução, logo o Médico tambem não poderá iniciar!\n");
-		return (-1);
-	}
-	if (argc < 3)
-	{
-		ourPutString("Faltam argumentos de entrada: necessário nome e especialidade do Médico.\n");
-		exit(-1);
-		ourPutString("O Balcao nao esta em execucao, logo o Medico tambem nao podera iniciar!\n");
 		return (1);
 	}
 	if (argc < 3)
 	{
-		ourPutString("Faltam argumentos de entrada: necessario nome e especialidade do Medico.\n");
+		ourPutString("Faltam argumentos de entrada: necessário nome e especialidade do Médico.\n");
 		return (2);
 	}
 	else
