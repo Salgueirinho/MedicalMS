@@ -87,22 +87,16 @@ static int	getNumberFromEnv(const char *env_name)
 	return -1;
 }
 
-static int	getMaxClientes(void)
+static int	getMax(const char *name, const int val)
 {
-	int	n = getNumberFromEnv("MAXCLIENTES");
-	return n > 0 ? n : MAX_CLIENTES_DEFAULT;
-}
-
-static int	getMaxMedicos(void)
-{
-	int	n = getNumberFromEnv("MAXMEDICOS");
-	return n > 0 ? n : MAX_MEDICOS_DEFAULT;
+	int	n = getNumberFromEnv(name);
+	return n > 0 ? n : val;
 }
 
 static void	setMaxValues(pValoresMaximos valoresMaximos)
 {
-	valoresMaximos->max_clientes = getMaxClientes();
-	valoresMaximos->max_medicos = getMaxMedicos();
+	valoresMaximos->max_clientes = getMax("MAXCLIENTES", MAX_CLIENTES_DEFAULT);
+	valoresMaximos->max_medicos = getMax("MAXMEDICOS", MAX_MEDICOS_DEFAULT);
 	valoresMaximos->max_lugares = MAX_FILA;
 	valoresMaximos->max_especialidades = MAX_ESPECIALIDADES_DEFAULT;
 }
@@ -131,7 +125,7 @@ int	main(void)
 	char	comando[40];
 	int	bytes_read;
 
-	if (balcaoIsRunning(getpid()))
+	if (balcaoIsRunning((int) getpid()))
 	{
 		printf("Ja existe um balcao em execucao!\n");
 		return (-1);
