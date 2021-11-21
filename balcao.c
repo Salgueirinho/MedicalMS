@@ -239,13 +239,10 @@ int	main(void)
 
 	if (balcaoIsRunning((int) getpid()))
 	{
-<<<<<<< HEAD
 		ourPutString("Já existe um balcão em execução!\n");
 		return (-1);
-=======
 		ourPutString("Ja existe um balcao em execucao!\n");
 		return (1);
->>>>>>> bad5a25d341ac1c92ff1985ccf26d4c66afd95b8
 	}
 
 	setMaxValues(&valoresMaximos);
