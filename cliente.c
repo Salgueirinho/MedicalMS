@@ -19,6 +19,11 @@ int main(int argc, char* argv[]){
 	}
 	else
 	{
+		if (!balcaoIsRunning(0))
+		{
+			ourPutString("O Balcao nao esta em execucao, logo o Cliente tambem nao podera iniciar!\n");
+			return (-1);
+		}
   	Cliente utente;
 	  guardaNome(argv[1], &utente);
 		ourPutString("Quais sao os seus sintomas?\n");

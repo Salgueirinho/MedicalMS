@@ -68,7 +68,7 @@ static int	callClassificador(void)
 	return (0);
 }
 
-static int	getNumberFromEnv(char *env_name)
+static int	getNumberFromEnv(const char *env_name)
 {
 	char *value_str;
 	int	value;
@@ -90,13 +90,13 @@ static int	getNumberFromEnv(char *env_name)
 static int	getMaxClientes(void)
 {
 	int	n = getNumberFromEnv("MAXCLIENTES");
-	return n > 0? n : MAX_CLIENTES_DEFAULT;
+	return n > 0 ? n : MAX_CLIENTES_DEFAULT;
 }
 
 static int	getMaxMedicos(void)
 {
 	int	n = getNumberFromEnv("MAXMEDICOS");
-	return n > 0? n : MAX_MEDICOS_DEFAULT;
+	return n > 0 ? n : MAX_MEDICOS_DEFAULT;
 }
 
 static void	setMaxValues(pValoresMaximos valoresMaximos)
@@ -107,7 +107,7 @@ static void	setMaxValues(pValoresMaximos valoresMaximos)
 	valoresMaximos->max_especialidades = MAX_ESPECIALIDADES_DEFAULT;
 }
 
-static void interpretCommand(char *comando)
+static void interpretCommand(const char *comando)
 {
 	if (strcmp(comando, "utentes") == 0)
 		printf("O sistema de momento tem %d utentes.\n", 0);
@@ -130,6 +130,13 @@ int	main(void)
 	ValoresMaximos valoresMaximos;
 	char	comando[40];
 	int	bytes_read;
+
+	if (balcaoIsRunning(getpid()))
+	{
+		printf("Ja existe um balcao em execucao!\n");
+		return (-1);
+	}
+
 	setMaxValues(&valoresMaximos);
 	while (strcmp(comando, "encerra") != 0)
 	{

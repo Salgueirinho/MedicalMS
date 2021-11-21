@@ -20,6 +20,11 @@ int	main(int argc, char *argv[])
 	}
 	else
 	{
+		if (!balcaoIsRunning(0))
+		{
+			ourPutString("O Balcao nao esta em execucao, logo o Medico tambem nao podera iniciar!\n");
+			return (-1);
+		}
 		Medico especialista;
 		guardaNome(argv[1], &especialista);
 		guardaEspecialidade(argv[2], &especialista);
