@@ -1,6 +1,6 @@
-SOURCES = cliente.c	\
-					balcao.c	\
-					medico.c	\
+SOURCES = patient.c	\
+					service_desk.c	\
+					doctor.c	\
 
 OBJECTS	= $(patsubst %.c, %, $(SOURCES))
 
@@ -12,11 +12,11 @@ CC			= gcc $(FLAGS)
 
 all:			$(OBJECTS) $(UTILS)
 
-cliente: $(UTILS)
+patient: $(UTILS)
 
-balcao: $(UTILS)
+service_desk: $(UTILS)
 
-medico: $(UTILS)
+doctor: $(UTILS)
 
 clean:
 	@rm -f $(OBJECTS) $(UTILS)

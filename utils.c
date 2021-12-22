@@ -1,16 +1,3 @@
-/*
-
-	 Trabalho pratico realizado por:
-	 - Goncalo Salgueirinho - a2020142627@isec.pt
-	 - Kylix Afonso - a2020146228@isec.pt
-	 Docente responsavel pela unidade curricular:
-	 - prof. Joao Duraes
-	 Unidade curricular:
-	 - Sistemas Operativos
-	 Insituto Superior de Engenharia de Coimbra
-
-*/
-
 #include <unistd.h>
 #include <stdbool.h>
 #include <fcntl.h>
@@ -18,36 +5,10 @@
 #include <dirent.h>
 #include <stdlib.h>
 
-void	ourPutChar(const char c)
+void	putString(const char *s, int fd)
 {
-	write(1, &c, 1);
+	write(fd, s, strlen(s));
 }
-
-/*
-
-	void	ourPutString(const char *str)
-
-	- definição: função que coloca uma string passada por argumento em stdout
-	- parâmetro: string a mostrar
-
-*/
-
-void	ourPutString(const char *str)
-{
-	write(1, str, strlen(str));
-}
-
-/*
-
-	static bool isNumber(const char *str)
-
-	- definição: função que verifica se uma string é totalmente numérica.
-	- return value:
-	false) caso a string não seja totalmente numérica;
-	true) caso a string seja totalmente numérica.
-	- parâmetro: string a verificar.
-
-*/
 
 static bool	isNumber(const char *str)
 {
@@ -63,30 +24,7 @@ static bool	isNumber(const char *str)
 	return (true);
 }
 
-/*
-
-	bool balcaoIsRunning(const int pid)
-
-	definição: função que verifica se existe algum ./balcao em execução,
-	ao verificar o conteúdo do ficheiro "cmdline" nas pastas de todos os
-	PID's existentes em /proc/
-	return value:
-	true) caso seja encontrado um /proc/PID/cmdline com conteúdo inícial
-	"./balcao" onde PID pode tomar vários valores;
-	false: caso não seja encontrado um /proc/PID/cmdline com conteúdo
-	inicial "./balcao".
-	parâmetros: inteiro PID que no caso do balcão vai receber argumento
-	(int) getpid() e no caso de todos os outros ficheiros vai receber o
-	valor 0, isto acontece porque caso não passassemos o PID do balcão
-	na chamada da função e posteriormente a usassemos para verificar que o
-	PID da pasta pela qual estamos a iterar é de facto não igual ao PID
-	passado, o balcão nunca iria conseguir executar (em palavras simples,
-	sem o PID, quando executassemos o balcão, ele iria encontrar-se a si
-	próprio e isso iria impedir o balcão de alguma vez executar).
-
-*/
-
-bool balcaoIsRunning(const int pid)
+bool serviceDeskIsRunning(const int pid)
 {
 	DIR* dir;
 	struct dirent* ent;
@@ -94,9 +32,8 @@ bool balcaoIsRunning(const int pid)
 	int	fd;
 
 	if (!(dir = opendir("/proc")))
-	{
 		exit(1);
-	}
+
 
 	while((ent = readdir(dir)) != NULL)
 	{
@@ -111,7 +48,7 @@ bool balcaoIsRunning(const int pid)
 				strcpy(buf, "\0");
 				if (read(fd, buf, sizeof(buf)) != -1)
 				{
-					if (strncmp(buf, "./balcao", 8) == 0)
+					if (strncmp(buf, "./service_desk", 14) == 0)
 					{
 						close(fd);
 						closedir(dir);
