@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdbool.h>
 #include <unistd.h>
 #include "doctor.h"
 #include "utils.h"

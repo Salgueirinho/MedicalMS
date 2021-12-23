@@ -1,5 +1,5 @@
-#include <unistd.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "patient.h"
 #include "utils.h"
 

@@ -1,10 +1,10 @@
-#include <unistd.h>
 #include <stdbool.h>
-#include <fcntl.h>
-#include <string.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <ctype.h>
+#include <fcntl.h>
 
 void	putString(const char *s, int fd)
 {
