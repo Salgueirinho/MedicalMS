@@ -18,7 +18,8 @@ int	main(int argc, char *argv[])
 	}
 	else if (argc < 3)
 	{
-		putString("Too few arguments provided\n", STDERR_FILENO);
+		putString(argv[0], STDERR_FILENO);
+		putString(" <name> <speciality>\n", STDERR_FILENO);
 		exit(0);
 	}
 	else

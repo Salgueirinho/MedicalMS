@@ -26,7 +26,8 @@ int main(int argc, char* argv[])
 	}
 	else if (argc < 2)
 	{
-		putString("Too few arguments provided\n", STDERR_FILENO);
+		putString(argv[0], STDERR_FILENO);
+		putString(" <name>\n", STDERR_FILENO);
 		exit(0);
 	}
 	else
