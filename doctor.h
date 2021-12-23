@@ -2,8 +2,9 @@
 #define DOCTOR_H
 
 typedef struct Doctor {
-	char *name;
-	char *speciality;
+	char name[255];
+	char speciality[255];
+	int	pid;
 } Doctor;
 
 #endif

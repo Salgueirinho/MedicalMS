@@ -1,6 +1,8 @@
 #ifndef SERVICE_DESK_H
 #define SERVICE_DESK_H
 
+#define	SERV_FIFO "/tmp/SERV_FIFO"
+
 #define MAX_PATIENTS 5
 #define MAX_DOCTORS 5
 #define MAX_SPECIALITIES 5

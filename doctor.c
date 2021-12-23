@@ -1,13 +1,8 @@
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "doctor.h"
 #include "utils.h"
-
-void	registerDoctor(char* name, char* speciality, Doctor *doctor)
-{
-	doctor->speciality = speciality;
-	doctor->name = name;
-}
 
 int	main(int argc, char *argv[])
 {
@@ -25,7 +20,8 @@ int	main(int argc, char *argv[])
 	else
 	{
 		Doctor	doctor;
-		registerDoctor(argv[1], argv[2], &doctor);
+		strncpy(doctor.name, argv[1], sizeof(doctor.name));
+		strncpy(doctor.speciality, argv[2], sizeof(doctor.speciality));
 	}
 	return (0);
 }

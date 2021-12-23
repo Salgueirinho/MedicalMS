@@ -11,13 +11,6 @@ void	putString(const char *s, int fd)
 	write(fd, s, strlen(s));
 }
 
-void	handleSIGINT(int i)
-{
-	(void) i;
-	putString("\nTry writing \"exit\" instead\n",
-		STDERR_FILENO);
-}
-
 static bool	isNumber(const char *s)
 {
 	while (*s)

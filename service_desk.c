@@ -2,18 +2,40 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include "service_desk.h"
+#include "patient.h"
 #include "utils.h"
 
-static int	callClassifier(void)
+int	main(void)
 {
-	char	symptoms[40];
-	char	speciality[40];
+	Patient	patient = {"default", "#fim\n", 0};
+	char	speciality[40] = "";
+	char	command[40] = "";
 	int		p1[2] = {-1, -1};
 	int		p2[2] = {-1, -1};
-	int		pid = -1;
+	struct timeval	time;
 	int		bytes = -1;
+	int		pid = -1;
+	int		fd = -1;
+	fd_set	fds;
 
+	if (serviceDeskIsRunning((int) getpid()) == true)
+	{
+		putString("There is already a service desk running!\n", STDERR_FILENO);
+		exit(0);
+	}
+	if (access(SERV_FIFO, F_OK) == 0)
+	{
+		putString("There is already a service desk FIFO open\n", STDERR_FILENO);
+		exit(0);
+	}
+	if (mkfifo(SERV_FIFO, 0600) == -1)
+	{
+		putString("Error occured while trying to make FIFO\n", STDERR_FILENO);
+		exit(0);
+	}
 	if (pipe(p1) == -1)
 		exit(0);
 	if (pipe(p2) == -1)
@@ -23,10 +45,6 @@ static int	callClassifier(void)
 		exit(0);
 	else if (pid == 0)
 	{
-		/*
-			Child process - executes the classifier and is partially responsible for
-			the I/O of the two unnamed pipes
-		*/
 		close(p1[1]);
 		close(p2[0]);
 		close(0);
@@ -40,86 +58,52 @@ static int	callClassifier(void)
 			STDERR_FILENO);
 		exit(0);
 	}
-	else
+	close(p1[0]);
+	close(p2[1]);
+	fd = open(SERV_FIFO, O_RDWR);
+	putString("[admin] command: ", STDOUT_FILENO);
+	do
 	{
-		/*
-			Parent process - sends symptoms and receives the speciality and urgency
-			from the classifier
-		*/
-		close(p1[0]);
-		close(p2[1]);
-		do
+		FD_ZERO(&fds);
+		FD_SET(0, &fds);
+		FD_SET(fd, &fds);
+		time.tv_sec = 1;
+		time.tv_usec = 0;
+		bytes = select(fd + 1, &fds, NULL, NULL, &time);
+		if (bytes > 0 && FD_ISSET(0, &fds))
 		{
-			bytes = 0;
-			putString("[admin] symptoms: ", STDOUT_FILENO);
-			if ((bytes = read(0, &symptoms, sizeof(symptoms) - 1)) == -1)
-				exit(0);
-			symptoms[bytes] = '\0';
-			bytes = 0;
-			if (write(p1[1], symptoms, strlen(symptoms)) == -1)
-				exit(0);
-			if (strcmp(symptoms, "#fim\n") != 0)
+			bytes = read(0, command, sizeof(command) - 1);
+			if (bytes == -1)
 			{
-				if ((bytes = read(p2[0], speciality, sizeof(speciality) - 1)) == -1)
-					exit(0);
-				speciality[bytes] = '\0';
-				putString(speciality, STDOUT_FILENO);
+				putString("An error occured while trying to read command!\n",
+						STDERR_FILENO);
+				exit(0);
 			}
-		} while (strcmp(symptoms, "#fim\n") != 0);
-		close(p1[1]);
-		close(p2[0]);
-	}
-	return (0);
-}
-
-/*
-static int	getNumberFromEnv(const char *env_name, int default_value)
-{
-	int		value = -1;
-	char	*s = NULL;
-
-	s = getenv(env_name);
-	if (s)
-		value = atoi(s);
-	return (value > 0 ? value : default_value);
-}
-*/
-
-int	main(void)
-{
-	// MaxValues	max_values = {0, 0, 0, 0};
-	char			command[40] = "";
-	int				bytes = -1;
-
-	if (serviceDeskIsRunning((int) getpid()) == true)
-	{
-		putString("There is already a service desk running!\n", STDERR_FILENO);
-		exit(0);
-	}
-	if (signal(SIGINT, handleSIGINT) == SIG_ERR)
-	{
-		putString("It wasn't possible to configure SIGINT\n", STDERR_FILENO);
-		exit(0);
-	}
-	/*
-	max_values.max_patients = getNumberFromEnv("MAXPATIENTS", MAX_PATIENTS);
-	max_values.max_doctors = getNumberFromEnv("MAXDOCTORS", MAX_DOCTORS);
-	max_values.max_specialties = MAX_SPECIALITIES;
-	max_values.max_line = MAX_LINE;
-	*/
-	while (strcmp(command, "exit") != 0)
-	{
-		putString("[admin] command: ", STDOUT_FILENO);
-		bytes = read(0, command, sizeof(command) - 1);
-		if (bytes == -1)
-		{
-			putString("An error occured while trying to read command!\n",
-				STDERR_FILENO);
-			exit(0);
+			command[bytes - 1] = '\0';
+			if (strcmp(command, "exit") == 0)
+				break;
+			putString("[admin] command: ", STDOUT_FILENO);
 		}
-		command[bytes - 1] = '\0';
-		if (strcmp(command, "symptoms") == 0)
-			callClassifier();
-	}
+		else if (bytes > 0 && FD_ISSET(fd, &fds))
+		{
+			bytes = read(fd, &patient, sizeof(Patient));
+			if (bytes == sizeof(Patient))
+			{
+				if (write(p1[1], patient.symptoms, strlen(patient.symptoms)) == -1)
+					exit(0);
+				if (strcmp(patient.symptoms, "#fim\n") != 0)
+				{
+					if ((bytes = read(p2[0], speciality, sizeof(speciality) - 1)) == -1)
+						exit(0);
+					speciality[bytes] = '\0';
+					putString(speciality, STDOUT_FILENO);
+				}
+			}
+		}
+	} while (true);
+	close(fd);
+	unlink(SERV_FIFO);
+	close(p1[1]);
+	close(p2[0]);
 	return (0);
 }
