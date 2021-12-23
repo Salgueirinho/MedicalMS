@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -35,11 +36,6 @@ static int	callClassifier(void)
 		close(p1[0]);
 		close(p2[1]);
 		execl("classifier", "classifier", NULL);
-		/*
-			If during the execution of the code, the program reaches this point,
-			it is because an error occured while attempting to execute the
-			classifier
-		*/
 		putString("An error occured while attempting to execute the classifier\n",
 			STDERR_FILENO);
 		exit(0);
@@ -76,6 +72,7 @@ static int	callClassifier(void)
 	return (0);
 }
 
+/*
 static int	getNumberFromEnv(const char *env_name, int default_value)
 {
 	int		value = -1;
@@ -86,19 +83,12 @@ static int	getNumberFromEnv(const char *env_name, int default_value)
 		value = atoi(s);
 	return (value > 0 ? value : default_value);
 }
-
-static void	setMaxValues(MaxValues *max_values)
-{
-	max_values->max_patients = getNumberFromEnv("MAXPATIENTS", MAX_PATIENTS);
-	max_values->max_doctors = getNumberFromEnv("MAXDOCTORS", MAX_DOCTORS);
-	max_values->max_specialties = MAX_SPECIALITIES;
-	max_values->max_line = MAX_LINE;
-}
+*/
 
 int	main(void)
 {
-	MaxValues	max_values = {0, 0, 0, 0};
-	char			command[40];
+	// MaxValues	max_values = {0, 0, 0, 0};
+	char			command[40] = "";
 	int				bytes = -1;
 
 	if (serviceDeskIsRunning((int) getpid()) == true)
@@ -106,7 +96,17 @@ int	main(void)
 		putString("There is already a service desk running!\n", STDERR_FILENO);
 		exit(0);
 	}
-	setMaxValues(&max_values);
+	if (signal(SIGINT, handleSIGINT) == SIG_ERR)
+	{
+		putString("It wasn't possible to configure SIGINT\n", STDERR_FILENO);
+		exit(0);
+	}
+	/*
+	max_values.max_patients = getNumberFromEnv("MAXPATIENTS", MAX_PATIENTS);
+	max_values.max_doctors = getNumberFromEnv("MAXDOCTORS", MAX_DOCTORS);
+	max_values.max_specialties = MAX_SPECIALITIES;
+	max_values.max_line = MAX_LINE;
+	*/
 	while (strcmp(command, "exit") != 0)
 	{
 		putString("[admin] command: ", STDOUT_FILENO);

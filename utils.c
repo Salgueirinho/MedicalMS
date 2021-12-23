@@ -11,6 +11,13 @@ void	putString(const char *s, int fd)
 	write(fd, s, strlen(s));
 }
 
+void	handleSIGINT(int i)
+{
+	(void) i;
+	putString("\nTry writing \"exit\" instead\n",
+		STDERR_FILENO);
+}
+
 static bool	isNumber(const char *s)
 {
 	while (*s)
@@ -31,8 +38,6 @@ bool serviceDeskIsRunning(const int pid)
 
 	if (!(dir = opendir("/proc")))
 		exit(1);
-
-
 	while((ent = readdir(dir)) != NULL)
 	{
 		if (isNumber(ent->d_name) && atoi(ent->d_name) != pid)
@@ -58,5 +63,6 @@ bool serviceDeskIsRunning(const int pid)
 		}
 		strcpy(buf, "");
 	}
+	closedir(dir);
 	return (false);
 }
