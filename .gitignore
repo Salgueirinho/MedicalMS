@@ -1,7 +1,7 @@
 *.o
-cliente
-balcao
-medico
-
+service_desk
+patient
+doctor
+.gitignore
 *.swp
 .NOTES

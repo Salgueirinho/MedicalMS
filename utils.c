@@ -4,32 +4,30 @@
 #include <string.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 void	putString(const char *s, int fd)
 {
 	write(fd, s, strlen(s));
 }
 
-static bool	isNumber(const char *str)
+static bool	isNumber(const char *s)
 {
-	int	i;
-
-	i = 0;
-	while (str[i])
+	while (*s)
 	{
-		if (!('0' <= str[i] && str[i] <= '9'))
+		if (!isdigit(*s))
 			return (false);
-		i++;
+		s++;
 	}
 	return (true);
 }
 
 bool serviceDeskIsRunning(const int pid)
 {
-	DIR* dir;
-	struct dirent* ent;
+	DIR* dir = NULL;
+	struct dirent* ent = NULL;
 	char buf[50] = "\0";
-	int	fd;
+	int	fd = -1;
 
 	if (!(dir = opendir("/proc")))
 		exit(1);

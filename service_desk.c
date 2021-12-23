@@ -8,18 +8,18 @@ static int	callClassifier(void)
 {
 	char	symptoms[40];
 	char	speciality[40];
-	int		p1[2];
-	int		p2[2];
-	int		pid;
-	int		bytes;
+	int		p1[2] = {-1, -1};
+	int		p2[2] = {-1, -1};
+	int		pid = -1;
+	int		bytes = -1;
 
 	if (pipe(p1) == -1)
-		return (1);
+		exit(0);
 	if (pipe(p2) == -1)
-		return (2);
+		exit(0);
 	pid = fork();
 	if (pid == -1)
-		return (3);
+		exit(0);
 	else if (pid == 0)
 	{
 		/*
@@ -42,7 +42,7 @@ static int	callClassifier(void)
 		*/
 		putString("An error occured while attempting to execute the classifier\n",
 			STDERR_FILENO);
-		return (5);
+		exit(0);
 	}
 	else
 	{
@@ -57,15 +57,15 @@ static int	callClassifier(void)
 			bytes = 0;
 			putString("[admin] symptoms: ", STDOUT_FILENO);
 			if ((bytes = read(0, &symptoms, sizeof(symptoms) - 1)) == -1)
-				return (6);
+				exit(0);
 			symptoms[bytes] = '\0';
 			bytes = 0;
 			if (write(p1[1], symptoms, strlen(symptoms)) == -1)
-				return (7);
+				exit(0);
 			if (strcmp(symptoms, "#fim\n") != 0)
 			{
 				if ((bytes = read(p2[0], speciality, sizeof(speciality) - 1)) == -1)
-					return (8);
+					exit(0);
 				speciality[bytes] = '\0';
 				putString(speciality, STDOUT_FILENO);
 			}
@@ -76,51 +76,30 @@ static int	callClassifier(void)
 	return (0);
 }
 
-static int	getNumberFromEnv(const char *env_name)
+static int	getNumberFromEnv(const char *env_name, int default_value)
 {
-	char *value_str;
-	int	value;
+	int		value = -1;
+	char	*s = NULL;
 
-	value_str = getenv(env_name);
-	if (value_str)
-	{
-		value = atoi(value_str);
-		if (value <= 0)
-		{
-			putString(env_name, STDERR_FILENO);
-			putString("toma um valor não positivo\n", STDERR_FILENO);
-		}
-		else
-			return (value);
-	}
-	else
-	{
-		putString("An error occured while trying to get $(", STDERR_FILENO);
-		putString(env_name, STDERR_FILENO);
-		putString(") from the local variables\n", STDERR_FILENO);
-	}
-	return (-1);
-}
-
-static int	getMax(const char *name, const int default_value)
-{
-	int	n = getNumberFromEnv(name);
-	return (n > 0 ? n : default_value);
+	s = getenv(env_name);
+	if (s)
+		value = atoi(s);
+	return (value > 0 ? value : default_value);
 }
 
 static void	setMaxValues(MaxValues *max_values)
 {
-	max_values->max_patients = getMax("MAXPATIENTS", MAX_PATIENTS);
-	max_values->max_doctors = getMax("MAXDOCTORS", MAX_DOCTORS);
-	max_values->max_line = MAX_LINE;
+	max_values->max_patients = getNumberFromEnv("MAXPATIENTS", MAX_PATIENTS);
+	max_values->max_doctors = getNumberFromEnv("MAXDOCTORS", MAX_DOCTORS);
 	max_values->max_specialties = MAX_SPECIALITIES;
+	max_values->max_line = MAX_LINE;
 }
 
 int	main(void)
 {
-	MaxValues	max_values;
-	char	command[40];
-	int		bytes;
+	MaxValues	max_values = {0, 0, 0, 0};
+	char			command[40];
+	int				bytes = -1;
 
 	if (serviceDeskIsRunning((int) getpid()) == true)
 	{
