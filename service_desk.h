@@ -8,11 +8,16 @@
 #define MAX_SPECIALITIES 5
 #define MAX_LINE 5
 
-typedef struct MaxValues {
+typedef struct	MaxValues {
 	int	max_patients;	
 	int	max_doctors;
 	int	max_specialties;
 	int	max_line;
 } MaxValues;
+
+typedef struct	ClassifierOutput {
+	char	speciality[13];
+	int		urgency;
+} ClassifierOutput;
 
 #endif

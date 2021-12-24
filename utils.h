@@ -5,6 +5,5 @@
 
 void	putString(const char *s, int fd);
 bool	serviceDeskIsRunning(const int pid); 
-void	handleSIGINT(int i);
 
 #endif
