@@ -40,13 +40,30 @@ int main(void)
 		exit(0);
 	}
 	if (pipe(p1) == -1)
+	{
+		unlink(SERV_FIFO);
+		putString("An error occured while trying to make pipe p1\n", STDERR_FILENO);
 		exit(0);
+	}
 	if (pipe(p2) == -1)
+	{
+		close(p1[0]);
+		close(p1[1]);
+		unlink(SERV_FIFO);
+		putString("An error occured while trying to make pipe p2\n", STDERR_FILENO);
 		exit(0);
-	pid = fork();
-	if (pid == -1)
+	}
+	if ((pid = fork()) == -1)
+	{
+		close(p2[0]);
+		close(p2[1]);
+		close(p1[0]);
+		close(p1[1]);
+		unlink(SERV_FIFO);
+		putString("An error occured while trying to fork\n", STDERR_FILENO);
 		exit(0);
-	else if (pid == 0)
+	}
+	if (pid == 0)
 	{
 		close(p1[1]);
 		close(p2[0]);
@@ -59,72 +76,139 @@ int main(void)
 		execl("classifier", "classifier", NULL);
 		putString("An error occured while attempting to execute the classifier\n",
 			STDERR_FILENO);
+		unlink(SERV_FIFO);
 		exit(0);
 	}
 	close(p1[0]);
 	close(p2[1]);
-	fd = open(SERV_FIFO, O_RDWR);
-	putString("[admin] command: ", STDOUT_FILENO);
+	if ((fd = open(SERV_FIFO, O_RDWR)) == -1)
+	{
+		close(p1[1]);
+		close(p2[0]);
+		unlink(SERV_FIFO);
+		putString("An error occured while trying to open serice desk FIFO\n",
+			STDERR_FILENO);
+		exit(0);
+	}
+	if ((putString("[admin] command: ", STDOUT_FILENO)) == -1)
+	{
+		close(fd);
+		close(p1[1]);
+		close(p2[0]);
+		unlink(SERV_FIFO);
+		putString("An error occured while trying to putString\n",
+			STDERR_FILENO);
+		exit(0);
+	}
+	time.tv_sec = 1;
+	time.tv_usec = 0;
 	do {
 		FD_ZERO(&fds);
 		FD_SET(0, &fds);
 		FD_SET(fd, &fds);
-		time.tv_sec = 1;
-		time.tv_usec = 0;
 		bytes = select(fd + 1, &fds, NULL, NULL, &time);
 		if (bytes > 0 && FD_ISSET(0, &fds))
 		{
-			bytes = read(0, command, sizeof(command) - 1);
-			if (bytes == -1)
+			if ((bytes = read(0, command, sizeof(command) - 1)) == -1)
 			{
 				putString("An error occured while trying to read command!\n",
-					STDERR_FILENO);
+						STDERR_FILENO);
 				exit(0);
 			}
 			command[bytes - 1] = '\0';
 			if (strcmp(command, "exit") == 0)
 				break;
-			putString("[admin] command: ", STDOUT_FILENO);
+			if ((putString("[admin] command: ", STDOUT_FILENO)) == -1)
+			{
+				close(fd);
+				close(p1[1]);
+				close(p2[0]);
+				unlink(SERV_FIFO);
+				putString("An error occured while trying to putString\n",
+						STDERR_FILENO);
+				exit(0);
+			}
 		}
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
 			if ((bytes = read(fd, &patient, sizeof(Patient))) == -1)
 			{
+				close(fd);
+				close(p1[1]);
+				close(p2[0]);
+				unlink(SERV_FIFO);
 				putString("An error occured while trying to read patient's details\n",
-					STDERR_FILENO);
+						STDERR_FILENO);
 				exit(0);
 			}
 			if (bytes == sizeof(Patient))
 			{
 				if (write(p1[1], patient.symptoms, strlen(patient.symptoms)) == -1)
 				{
+					close(fd);
+					close(p1[1]);
+					close(p2[0]);
+					unlink(SERV_FIFO);
 					putString("An error occured while trying to write symptoms\n",
-						STDERR_FILENO);
+							STDERR_FILENO);
 					exit(0);
 				}
 				if (strcmp(patient.symptoms, "#fim\n") != 0)
 				{
 					if ((bytes = read(p2[0], speciality, sizeof(speciality) - 1)) == -1)
 					{
+						close(fd);
+						close(p1[1]);
+						close(p2[0]);
+						unlink(SERV_FIFO);
 						putString("An error occured while trying to read speciality\n",
-							STDERR_FILENO);
+								STDERR_FILENO);
 						exit(0);
 					}
 					speciality[bytes] = '\0';
 					sprintf(pfifo, "/tmp/p%d", patient.pid);
 					if ((fdp = open(pfifo, O_WRONLY)) == -1)
 					{
+						close(fd);
+						close(p1[1]);
+						close(p2[0]);
+						unlink(SERV_FIFO);
 						putString("An error occured while trying to open patient FIFO\n",
-							STDERR_FILENO);
+								STDERR_FILENO);
 					}
 					if (write(fdp, speciality, sizeof(speciality)) == -1)
 					{
+						close(fdp);
+						close(fd);
+						close(p1[1]);
+						close(p2[0]);
+						unlink(SERV_FIFO);
 						putString("An error occured while trying to write speciality\n",
-							STDERR_FILENO);
+								STDERR_FILENO);
 						exit(0);
 					}
-					putString(patient.name, STDOUT_FILENO);
-					putString("'s speciality was sent\n", STDOUT_FILENO);
+					if (putString(patient.name, STDOUT_FILENO) == -1)
+					{
+						close(fdp);
+						close(fd);
+						close(p1[1]);
+						close(p2[0]);
+						unlink(SERV_FIFO);
+						putString("An error occured while trying to putString\n",
+								STDERR_FILENO);
+						exit(0);
+					}
+					if (putString("\'s speciality was sent\n", STDOUT_FILENO) == -1)
+					{
+						close(fdp);
+						close(fd);
+						close(p1[1]);
+						close(p2[0]);
+						unlink(SERV_FIFO);
+						putString("An error occured while trying to putString\n",
+								STDERR_FILENO);
+						exit(0);
+					}
 					close(fdp);
 				}
 			}

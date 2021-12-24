@@ -6,9 +6,9 @@
 #include <ctype.h>
 #include <fcntl.h>
 
-void	putString(const char *s, int fd)
+int	putString(const char *s, int fd)
 {
-	write(fd, s, strlen(s));
+	return (write(fd, s, strlen(s)));
 }
 
 static bool	isNumber(const char *s)
