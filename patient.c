@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
 	if (access(SERV_FIFO, F_OK) != 0)
 	{
 		putString("Error, service desk FIFO doesn't exist\n", STDERR_FILENO);
+		unlink(pfifo);
 		exit(0);
 	}
 	strncpy(patient.name, argv[1], sizeof(patient.name));
@@ -58,18 +59,21 @@ int main(int argc, char *argv[])
 	if ((fd = open(SERV_FIFO, O_WRONLY)) == -1)
 	{
 		putString("Couldn't open named pipe file\n", STDERR_FILENO);
+		unlink(pfifo);
 		exit(0);
 	}
 	if (write(fd, &patient, sizeof(Patient)) == -1)
 	{
 		putString("Couldn't write to named pipe\n", STDERR_FILENO);
 		close(fd);
+		unlink(pfifo);
 		exit(0);
 	}
 	if ((fdp = open(pfifo, O_RDONLY)) == -1)
 	{
 		putString("Couldn't open FIFO\n", STDERR_FILENO);
 		close(fd);
+		unlink(pfifo);
 		exit(0);
 	}
 	if (read(fdp, speciality, sizeof(speciality) - 1) == -1)
@@ -77,9 +81,17 @@ int main(int argc, char *argv[])
 		putString("Couldn't read from named pipe\n", STDERR_FILENO);
 		close(fd);
 		close(fdp);
+		unlink(pfifo);
 		exit(0);
 	}
-	putString(speciality, STDIN_FILENO);
+	if (putString(speciality, STDOUT_FILENO) == -1)
+	{
+		putString("Couldn't putString\n", STDERR_FILENO);
+		close(fd);
+		close(fdp);
+		unlink(pfifo);
+		exit(0);
+	}
 	close(fdp);
 	close(fd);
 	unlink(pfifo);
