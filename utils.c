@@ -6,10 +6,6 @@
 #include <ctype.h>
 #include <fcntl.h>
 
-int	putString(const char *s, int fd)
-{
-	return (write(fd, s, strlen(s)));
-}
 static int	intlen(int n)
 {
 	int	len;

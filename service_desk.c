@@ -10,16 +10,12 @@
 #include "utils.h"
 #include "doctor.h"
 
-void printPatientQueue(Patient *patient_queue);
-void addPatient(Patient *patient_queue, Patient new_patient); 
 static void	executeClassifier(int p1[2], int p2[2]);
 
 int main(void)
 {
-	Patient	patient = {"default", "", 0, "geral", NULL};
-	Doctor	doctor = {"default", "", 0, 0, NULL};
-  Patient *patient_queue = NULL;
- // Doctor *doctor_list = NULL;
+	Patient	patient = {"default", "", 0, "geral"};
+	Doctor	doctor = {"default", "", 0, false};
 	char command[40] = "";
 	char pfifo[15] = "";
 	int p1[2] = {-1, -1};
@@ -34,23 +30,23 @@ int main(void)
 
 	if (serviceDeskIsRunning((int)getpid()) == true)
 	{
-		putString("There is already a service desk running!\n", STDERR_FILENO);
+		fprintf(stderr, "There is already a service desk running!\n");
 		exit(0);
 	}
 	if (access(SFIFO, F_OK) == 0)
 	{
-		putString("There is already a service desk FIFO open\n", STDERR_FILENO);
+		fprintf(stderr, "There is already a service desk FIFO open\n");
 		exit(0);
 	}
 	if (mkfifo(SFIFO, 0600) == -1)
 	{
-		putString("An error occured while trying to make FIFO\n", STDERR_FILENO);
+		fprintf(stderr, "An error occured while trying to make FIFO\n");
 		exit(0);
 	}
 	if (pipe(p1) == -1)
 	{
 		unlink(SFIFO);
-		putString("An error occured while trying to make pipe p1\n", STDERR_FILENO);
+		fprintf(stderr, "An error occured while trying to make pipe p1\n");
 		exit(0);
 	}
 	if (pipe(p2) == -1)
@@ -58,7 +54,7 @@ int main(void)
 		close(p1[0]);
 		close(p1[1]);
 		unlink(SFIFO);
-		putString("An error occured while trying to make pipe p2\n", STDERR_FILENO);
+		fprintf(stderr, "An error occured while trying to make pipe p2\n");
 		exit(0);
 	}
 	if ((pid = fork()) == -1)
@@ -68,7 +64,7 @@ int main(void)
 		close(p1[0]);
 		close(p1[1]);
 		unlink(SFIFO);
-		putString("An error occured while trying to fork\n", STDERR_FILENO);
+		fprintf(stderr, "An error occured while trying to fork\n");
 		exit(0);
 	}
 	if (pid == 0)
@@ -80,8 +76,7 @@ int main(void)
 		close(p1[1]);
 		close(p2[0]);
 		unlink(SFIFO);
-		putString("An error occured while trying to open serice desk FIFO\n",
-				STDERR_FILENO);
+		fprintf(stderr, "An error occured while trying to open serice desk FIFO\n");
 		exit(0);
 	}
 	time.tv_sec = 1;
@@ -95,18 +90,12 @@ int main(void)
 		{
 			if ((bytes = read(0, command, sizeof(command) - 1)) == -1)
 			{
-				putString("An error occured while trying to read command!\n",
-						STDERR_FILENO);
+				fprintf(stderr, "An error occured while trying to read command!\n");
 				exit(0);
 			}
 			command[bytes - 1] = '\0';
 			if (strcmp(command, "exit") == 0)
 				break;
-      if(strcmp(command, "patients") == 0)
-      { 
-        putString("Patient list:\n", STDOUT_FILENO);
-        printPatientQueue(patient_queue);
-      }
 		}
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
@@ -119,52 +108,16 @@ int main(void)
 					close(p1[1]);
 					close(p2[0]);
 					unlink(SFIFO);
-					putString("An error occured while trying to read doctor's details\n",
-							STDERR_FILENO);
+					fprintf(stderr, "An error occured while trying to read doctor's details\n");
 					exit(0);
 				}
 				if (bytes == sizeof(Doctor))
 				{
-					if (putString(doctor.name, STDOUT_FILENO) == -1)
-					{
-						close(fd);
-						close(p1[1]);
-						close(p2[0]);
-						unlink(SFIFO);
-						putString("An error occured while trying to putString\n",
-								STDERR_FILENO);
-						exit(0);
-					}
-					if (putString(", ", STDOUT_FILENO) == -1)
-					{
-						close(fd);
-						close(p1[1]);
-						close(p2[0]);
-						unlink(SFIFO);
-						putString("An error occured while trying to putString\n",
-								STDERR_FILENO);
-						exit(0);
-					}
-					if (putString(doctor.speciality, STDOUT_FILENO) == -1)
-					{
-						close(fd);
-						close(p1[1]);
-						close(p2[0]);
-						unlink(SFIFO);
-						putString("An error occured while trying to putString\n",
-								STDERR_FILENO);
-						exit(0);
-					}
-					if (putString("\n", STDOUT_FILENO) == -1)
-					{
-						close(fd);
-						close(p1[1]);
-						close(p2[0]);
-						unlink(SFIFO);
-						putString("An error occured while trying to putString\n",
-								STDERR_FILENO);
-						exit(0);
-					}
+					printf("Registered specialist:\n"
+								"- name: %s\n"
+								"- speciality: %s\n"
+								"- pid: %d\n",
+								doctor.name, doctor.speciality, doctor.pid);
 				}
 			}
 			else if (control == 'P')
@@ -175,8 +128,7 @@ int main(void)
 					close(p1[1]);
 					close(p2[0]);
 					unlink(SFIFO);
-					putString("An error occured while trying to read patient's details\n",
-							STDERR_FILENO);
+					fprintf(stderr, "An error occured while trying to read patient's details\n");
 					exit(0);
 				}
 				if (bytes == sizeof(Patient))
@@ -187,8 +139,7 @@ int main(void)
 						close(p1[1]);
 						close(p2[0]);
 						unlink(SFIFO);
-						putString("An error occured while trying to write symptoms\n",
-								STDERR_FILENO);
+						fprintf(stderr, "An error occured while trying to write symptoms\n");
 						exit(0);
 					}
 					if (strcmp(patient.symptoms, "#fim\n") != 0)
@@ -199,8 +150,7 @@ int main(void)
 							close(p1[1]);
 							close(p2[0]);
 							unlink(SFIFO);
-							putString("An error occured while trying to read speciality\n",
-									STDERR_FILENO);
+							fprintf(stderr, "An error occured while trying to read speciality\n");
 							exit(0);
 						}
 						patient.speciality[bytes] = '\0';
@@ -211,8 +161,7 @@ int main(void)
 							close(p1[1]);
 							close(p2[0]);
 							unlink(SFIFO);
-							putString("An error occured while trying to open patient FIFO\n",
-									STDERR_FILENO);
+							fprintf(stderr, "An error occured while trying to open patient FIFO\n");
 						}
 						if (write(fdp, patient.speciality, strlen(patient.speciality)) == -1)
 						{
@@ -221,34 +170,15 @@ int main(void)
 							close(p1[1]);
 							close(p2[0]);
 							unlink(SFIFO);
-							putString("An error occured while trying to write speciality\n",
-									STDERR_FILENO);
+							fprintf(stderr, "An error occured while trying to write speciality\n");
 							exit(0);
 						}
-						if (putString(patient.name, STDOUT_FILENO) == -1)
-						{
-							close(fdp);
-							close(fd);
-							close(p1[1]);
-							close(p2[0]);
-							unlink(SFIFO);
-							putString("An error occured while trying to putString\n",
-									STDERR_FILENO);
-							exit(0);
-						}
-						if (putString("\'s speciality was sent\n", STDOUT_FILENO) == -1)
-						{
-							close(fdp);
-							close(fd);
-							close(p1[1]);
-							close(p2[0]);
-							unlink(SFIFO);
-							putString("An error occured while trying to putString\n",
-									STDERR_FILENO);
-							exit(0);
-						}
-            putString("Add Patient to queue\n", STDOUT_FILENO);
-            addPatient(patient_queue,patient);
+						printf("Registered patient:\n"
+							"- name: %s\n"
+							"- symptoms: %s"
+							"- pid: %d\n"
+							"- speciality: %s",
+							patient.name, patient.symptoms, patient.pid,patient.speciality);
 						close(fdp);
 					}
 				}
@@ -273,48 +203,7 @@ static void	executeClassifier(int p1[2], int p2[2])
 	close(p1[0]);
 	close(p2[1]);
 	execl("classifier", "classifier", NULL);
-	putString("An error occured while attempting to execute the classifier\n",
-			STDERR_FILENO);
+	fprintf(stderr, "An error occured while attempting to execute the classifier\n");
 	unlink(SFIFO);
 	exit(0);
-}
-
-
-void printPatientQueue(Patient *patient_queue)
-{
-  Patient *aux = patient_queue;
-  
-  if (aux == NULL)
-  {
-    putString("Empty list\n", STDOUT_FILENO);
-    return;  
-  }
-
-  while (aux->next != NULL) 
-  {
-    putString(patient_queue->name, STDOUT_FILENO);
-    putString("\t", STDOUT_FILENO);
-    putString(patient_queue->speciality, STDOUT_FILENO);
-    aux = aux->next;
-  }
-}
-
-void addPatient(Patient *patient_queue, Patient new_patient) 
-{  
-  Patient *aux = patient_queue;
-
-  if (aux == NULL) 
-  {
-    aux = (Patient *)malloc(sizeof(Patient));
-    *(aux) = new_patient;
-    return;
-  }
-
-  while (aux->next != NULL)
-    aux = aux->next;
-
-  aux->next = (Patient *)malloc(sizeof(Patient));
-  *(aux->next) = new_patient;
-  aux->next->next = NULL;
-  
 }

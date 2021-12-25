@@ -10,45 +10,36 @@
 
 void registerPatient(Patient *me)
 {
-	int bytes = -1;
-
-	putString("Your symptoms: ", STDOUT_FILENO);
-	if ((bytes = read(0, me->symptoms, sizeof(me->symptoms) - 1)) == -1)
-	{
-		putString("Couldn't read symptoms\n", STDERR_FILENO);
-		exit(0);
-	}
-	me->symptoms[bytes - 1] = '\n';
-	me->symptoms[bytes] = '\0';
+	printf("Your symptoms: ");
+	fgets(me->symptoms, sizeof(me->symptoms), stdin);
 }
 
 int main(int argc, char *argv[])
 {
-	Patient	me = {"", "", getpid(), "", NULL};
+	Patient	me = {"", "", getpid(), ""};
 	char	pfifo[20] = "";
 	int		fdp;
 	int		fd;
 
 	if (serviceDeskIsRunning(0) == false)
 	{
-		putString("The service desk isn't running\n", STDERR_FILENO);
+		fprintf(stderr, "The service desk isn't running\n");
 		exit(0);
 	}
 	if (argc < 2)
 	{
-		putString(argv[0], STDERR_FILENO);
-		putString(" <name>\n", STDERR_FILENO);
+		printf("%s <name>\n", argv[0]);
 		exit(0);
 	}
 	sprintf(pfifo, PFIFO, me.pid);
 	if (mkfifo(pfifo, 0600) == -1)
 	{
-		putString("Error occured while trying to make FIFO\n", STDERR_FILENO);
+		fprintf(stderr, "Error occured while trying to make FIFO\n");
 		exit(0);
 	}
 	if (access(SFIFO, F_OK) != 0)
 	{
-		putString("Error, service desk FIFO doesn't exist\n", STDERR_FILENO);
+		fprintf(stderr, "Error, service desk FIFO doesn't exist\n");
 		unlink(pfifo);
 		exit(0);
 	}
@@ -56,20 +47,20 @@ int main(int argc, char *argv[])
 	registerPatient(&me);
 	if ((fd = open(SFIFO, O_WRONLY)) == -1)
 	{
-		putString("Couldn't open named pipe file\n", STDERR_FILENO);
+		fprintf(stderr, "Couldn't open named pipe file\n");
 		unlink(pfifo);
 		exit(0);
 	}
 	if (write(fd, "P", 1) == -1)
 	{
-		putString("Couldn't write to named pipe\n", STDERR_FILENO);
+		fprintf(stderr, "Couldn't write to named pipe\n");
 		close(fd);
 		unlink(pfifo);
 		exit(0);
 	}
 	if (write(fd, &me, sizeof(Patient)) == -1)
 	{
-		putString("Couldn't write to named pipe\n", STDERR_FILENO);
+		fprintf(stderr, "Couldn't write to named pipe\n");
 		close(fd);
 		unlink(pfifo);
 		exit(0);
@@ -77,26 +68,20 @@ int main(int argc, char *argv[])
 	close(fd);
 	if ((fdp = open(pfifo, O_RDONLY)) == -1)
 	{
-		putString("Couldn't open FIFO\n", STDERR_FILENO);
+		fprintf(stderr, "Couldn't open FIFO\n");
 		close(fd);
 		unlink(pfifo);
 		exit(0);
 	}
 	if (read(fdp, me.speciality, sizeof(me.speciality) - 1) == -1)
 	{
+		fprintf(stderr, "Couldn't read from named pipe\n");
 		close(fd);
 		unlink(pfifo);
-		putString("Couldn't read from named pipe\n", STDERR_FILENO);
 		exit(0);
 	}
 	close(fdp);
-	if (putString(me.speciality, STDOUT_FILENO) == -1)
-	{
-		close(fd);
-		unlink(pfifo);
-		putString("Couldn't putString\n", STDERR_FILENO);
-		exit(0);
-	}
+	printf("Your speciality: %s", me.speciality);
 	unlink(pfifo);
 	exit(0);
 }

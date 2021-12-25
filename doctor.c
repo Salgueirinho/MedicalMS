@@ -9,32 +9,31 @@
 
 int	main(int argc, char *argv[])
 {
-	Doctor	me = {"", "", getpid(), 0, NULL};
+	Doctor	me = {"", "", getpid(), false};
 	//char		dfifo[20] = "";
 	int			fd;
 
 	if (serviceDeskIsRunning(0) == false)
 	{
-		putString("The service desk isn't running\n", STDERR_FILENO);
+		fprintf(stderr, "The service desk isn't running\n");
 		exit(0);
 	}
 	if (argc < 3)
 	{
-		putString(argv[0], STDERR_FILENO);
-		putString(" <name> <speciality>\n", STDERR_FILENO);
+		fprintf(stderr, "%s <name> <speciality>\n", argv[0]);
 		exit(0);
 	}
 	/*
 	sprintf(dfifo, DFIFO, me.pid);
 	if (mkfifo(dfifo, 0600) == -1)
 	{
-		putString("Error occured while trying to make FIFO\n", STDERR_FILENO);
+		putString("Error occured while trying to make FIFO\n", );
 		exit(0);
 	}
 	*/
 	if (access(SFIFO, F_OK) != 0)
 	{
-		putString("Error, service desk FIFO doesn't exist\n", STDERR_FILENO);
+		fprintf(stderr, "Error, service desk FIFO doesn't exist\n");
 		//unlink(dfifo);
 		exit(0);
 	}
@@ -42,20 +41,20 @@ int	main(int argc, char *argv[])
 	strncpy(me.speciality, argv[2], sizeof(me.speciality));
 	if ((fd = open(SFIFO, O_WRONLY)) == -1)
 	{
-		putString("Couldn't open named pipe file\n", STDERR_FILENO);
+		fprintf(stderr, "Couldn't open named pipe file\n");
 		//unlink(dfifo);
 		exit(0);
 	}
 	if (write(fd, "D", 1) == -1)
 	{
-		putString("Couldn't write to named pipe\n", STDERR_FILENO);
+		fprintf(stderr, "Couldn't write to named pipe\n");
 		close(fd);
 		//unlink(dfifo);
 		exit(0);
 	}
 	if (write(fd, &me, sizeof(Doctor)) == -1)
 	{
-		putString("Couldn't write to named pipe\n", STDERR_FILENO);
+		fprintf(stderr, "Couldn't write to named pipe\n");
 		close(fd);
 		//unlink(dfifo);
 		exit(0);
