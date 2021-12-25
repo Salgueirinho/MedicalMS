@@ -10,12 +10,16 @@
 #include "utils.h"
 #include "doctor.h"
 
+void printPatientQueue(Patient *patient_queue);
+void addPatient(Patient *patient_queue, Patient new_patient); 
 static void	executeClassifier(int p1[2], int p2[2]);
 
 int main(void)
 {
-	Patient	patient = {"default", "", 0, "geral"};
-	Doctor	doctor = {"default", "", 0, false};
+	Patient	patient = {"default", "", 0, "geral", NULL};
+	Doctor	doctor = {"default", "", 0, 0, NULL};
+  Patient *patient_queue = NULL;
+ // Doctor *doctor_list = NULL;
 	char command[40] = "";
 	char pfifo[15] = "";
 	int p1[2] = {-1, -1};
@@ -98,6 +102,11 @@ int main(void)
 			command[bytes - 1] = '\0';
 			if (strcmp(command, "exit") == 0)
 				break;
+      if(strcmp(command, "patients") == 0)
+      { 
+        putString("Patient list:\n", STDOUT_FILENO);
+        printPatientQueue(patient_queue);
+      }
 		}
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
@@ -238,6 +247,8 @@ int main(void)
 									STDERR_FILENO);
 							exit(0);
 						}
+            putString("Add Patient to queue\n", STDOUT_FILENO);
+            addPatient(patient_queue,patient);
 						close(fdp);
 					}
 				}
@@ -266,4 +277,44 @@ static void	executeClassifier(int p1[2], int p2[2])
 			STDERR_FILENO);
 	unlink(SFIFO);
 	exit(0);
+}
+
+
+void printPatientQueue(Patient *patient_queue)
+{
+  Patient *aux = patient_queue;
+  
+  if (aux == NULL)
+  {
+    putString("Empty list\n", STDOUT_FILENO);
+    return;  
+  }
+
+  while (aux->next != NULL) 
+  {
+    putString(patient_queue->name, STDOUT_FILENO);
+    putString("\t", STDOUT_FILENO);
+    putString(patient_queue->speciality, STDOUT_FILENO);
+    aux = aux->next;
+  }
+}
+
+void addPatient(Patient *patient_queue, Patient new_patient) 
+{  
+  Patient *aux = patient_queue;
+
+  if (aux == NULL) 
+  {
+    aux = (Patient *)malloc(sizeof(Patient));
+    *(aux) = new_patient;
+    return;
+  }
+
+  while (aux->next != NULL)
+    aux = aux->next;
+
+  aux->next = (Patient *)malloc(sizeof(Patient));
+  *(aux->next) = new_patient;
+  aux->next->next = NULL;
+  
 }

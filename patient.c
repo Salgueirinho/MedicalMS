@@ -24,7 +24,7 @@ void registerPatient(Patient *me)
 
 int main(int argc, char *argv[])
 {
-	Patient	me = {"", "", getpid(), ""};
+	Patient	me = {"", "", getpid(), "", NULL};
 	char	pfifo[20] = "";
 	int		fdp;
 	int		fd;

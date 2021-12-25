@@ -3,11 +3,12 @@
 
 #define PFIFO "/tmp/p%d"
 
-typedef struct	Patient {
-  char	name[50];
-  char	symptoms[50];
-  int		pid;
-	char	speciality[16];
+typedef struct Patient {
+  char name[50];
+  char symptoms[50];
+  int pid;
+  char speciality[16];
+  struct Patient *next;
 } Patient;
 
 #endif

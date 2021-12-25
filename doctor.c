@@ -9,7 +9,7 @@
 
 int	main(int argc, char *argv[])
 {
-	Doctor	me = {"", "", getpid(), false};
+	Doctor	me = {"", "", getpid(), 0, NULL};
 	//char		dfifo[20] = "";
 	int			fd;
 
