@@ -13,6 +13,9 @@
 void	freePatientList(PatientList *patient_queue);
 void	displayPatientList(PatientList *patient_queue);
 PatientList	*addPatient(PatientList *patient_queue, Patient *patient);
+void	freeDoctorList(DoctorList *doctor_list);
+void	displayDoctorList(DoctorList *doctor_list);
+DoctorList	*addDoctor(DoctorList *doctor_list, Doctor *doctor);
 static void	executeClassifier(int p1[2], int p2[2]);
 
 int main(void)
@@ -20,6 +23,7 @@ int main(void)
 	Patient	patient = {"default", "", 0, "geral"};
 	Doctor	doctor = {"default", "", 0, false};
 	PatientList	*patient_queue = NULL;
+	DoctorList	*doctor_list = NULL;
 	char command[40] = "";
 	char pfifo[15] = "";
 	int p1[2] = {-1, -1};
@@ -97,6 +101,8 @@ int main(void)
 				break;
 			else if (strcmp(command, "patients\n") == 0)
 				displayPatientList(patient_queue);
+			else if (strcmp(command, "doctors\n") == 0)
+				displayDoctorList(doctor_list);
 		}
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
@@ -114,6 +120,7 @@ int main(void)
 				}
 				if (bytes == sizeof(Doctor))
 				{
+					doctor_list = addDoctor(doctor_list, &doctor);
 					printf("Registered specialist:\n"
 								"- name: %s\n"
 								"- speciality: %s\n"
@@ -192,7 +199,53 @@ int main(void)
 	close(p1[1]);
 	close(p2[0]);
 	freePatientList(patient_queue);
+	freeDoctorList(doctor_list);
 	return (0);
+}
+
+DoctorList	*addDoctor(DoctorList *doctor_list, Doctor *doctor)
+{
+	DoctorList	*aux = doctor_list;
+
+	if (doctor_list == NULL)
+	{
+		doctor_list = (DoctorList *) malloc(sizeof(DoctorList));
+		memcpy(&doctor_list->doctor, doctor, sizeof(Doctor));
+		doctor_list->next = NULL;
+	}
+	else
+	{
+		while (aux->next != NULL)
+			aux = aux->next;
+		aux->next = (DoctorList *) malloc(sizeof(DoctorList));
+		memcpy(&aux->next->doctor, doctor, sizeof(Doctor));
+		aux->next->next = NULL;
+	}
+	return (doctor_list);
+}
+
+void	freeDoctorList(DoctorList *doctor_list)
+{
+	DoctorList	*aux = doctor_list;
+
+	while (doctor_list)
+	{
+		aux = doctor_list;
+		doctor_list = doctor_list->next;
+		free(aux);
+	}
+}
+
+void	displayDoctorList(DoctorList *doctor_list)
+{
+	DoctorList	*aux = doctor_list;
+
+	while (aux)
+	{
+		printf("doctor: %s, %s\n", aux->doctor.name,
+			aux->doctor.speciality);
+		aux = aux->next;
+	}
 }
 
 PatientList	*addPatient(PatientList *patient_queue, Patient *patient)
