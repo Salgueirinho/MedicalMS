@@ -10,12 +10,16 @@
 #include "utils.h"
 #include "doctor.h"
 
+void	freePatientList(PatientList *patient_queue);
+void	displayPatientList(PatientList *patient_queue);
+PatientList	*addPatient(PatientList *patient_queue, Patient *patient);
 static void	executeClassifier(int p1[2], int p2[2]);
 
 int main(void)
 {
 	Patient	patient = {"default", "", 0, "geral"};
 	Doctor	doctor = {"default", "", 0, false};
+	PatientList	*patient_queue = NULL;
 	char command[40] = "";
 	char pfifo[15] = "";
 	int p1[2] = {-1, -1};
@@ -88,14 +92,11 @@ int main(void)
 		bytes = select(fd + 1, &fds, NULL, NULL, &time);
 		if (bytes > 0 && FD_ISSET(0, &fds))
 		{
-			if ((bytes = read(0, command, sizeof(command) - 1)) == -1)
-			{
-				fprintf(stderr, "An error occured while trying to read command!\n");
-				exit(0);
-			}
-			command[bytes - 1] = '\0';
-			if (strcmp(command, "exit") == 0)
+			fgets(command, sizeof(command), stdin);
+			if (strcmp(command, "exit\n") == 0)
 				break;
+			else if (strcmp(command, "patients\n") == 0)
+				displayPatientList(patient_queue);
 		}
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
@@ -173,6 +174,7 @@ int main(void)
 							fprintf(stderr, "An error occured while trying to write speciality\n");
 							exit(0);
 						}
+						patient_queue = addPatient(patient_queue, &patient);
 						printf("Registered patient:\n"
 							"- name: %s\n"
 							"- symptoms: %s"
@@ -189,7 +191,53 @@ int main(void)
 	unlink(SFIFO);
 	close(p1[1]);
 	close(p2[0]);
+	freePatientList(patient_queue);
 	return (0);
+}
+
+PatientList	*addPatient(PatientList *patient_queue, Patient *patient)
+{
+	PatientList	*aux = patient_queue;
+
+	if (patient_queue == NULL)
+	{
+		patient_queue = (PatientList *) malloc(sizeof(PatientList));
+		memcpy(&patient_queue->patient, patient, sizeof(Patient));
+		patient_queue->next = NULL;
+	}
+	else
+	{
+		while (aux->next != NULL)
+			aux = aux->next;
+		aux->next = (PatientList *) malloc(sizeof(PatientList));
+		memcpy(&aux->next->patient, patient, sizeof(Patient));
+		aux->next->next = NULL;
+	}
+	return (patient_queue);
+}
+
+void	freePatientList(PatientList *patient_queue)
+{
+	PatientList	*aux = patient_queue;
+
+	while (patient_queue)
+	{
+		aux = patient_queue;
+		patient_queue = patient_queue->next;
+		free(aux);
+	}
+}
+
+void	displayPatientList(PatientList *patient_queue)
+{
+	PatientList	*aux = patient_queue;
+
+	while (aux)
+	{
+		printf("patient: %s, %s", aux->patient.name,
+			aux->patient.symptoms);
+		aux = aux->next;
+	}
 }
 
 static void	executeClassifier(int p1[2], int p2[2])

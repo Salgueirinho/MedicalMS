@@ -10,4 +10,9 @@ typedef struct	Patient {
 	char	speciality[17];
 } Patient;
 
+typedef struct	PatientList {
+	Patient	patient;
+	struct PatientList	*next;
+} PatientList;
+
 #endif
