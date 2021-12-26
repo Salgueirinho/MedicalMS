@@ -11,6 +11,7 @@
 #include "doctor.h"
 
 PatientList *removePatientFromQueue(PatientList * patient_queue, int position);
+DoctorList* removeDoctor(DoctorList * doctor_list, int position);
 int getPatientQueueSize(PatientList *patient_queue, char *speciality);
 int getPatientPriority(Patient patient);
 void	freePatientList(PatientList *patient_queue);
@@ -106,10 +107,10 @@ int main(void)
 				displayPatientList(patient_queue);
 			else if (strcmp(command, "doctors\n") == 0)
 				displayDoctorList(doctor_list);
-      else if (strncmp(command, "delp ", 5) == 0)
-      {
-        patient_queue = removePatientFromQueue(patient_queue, atoi(command+5));
-      }
+			else if (strncmp(command, "delp ", 5) == 0)
+				patient_queue = removePatientFromQueue(patient_queue, atoi(command + 5));
+			else if (strncmp(command, "deld ", 5) == 0)
+				doctor_list = removeDoctor(doctor_list, atoi(command + 5));
 		}
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
@@ -129,10 +130,10 @@ int main(void)
 				{
 					doctor_list = addDoctor(doctor_list, &doctor);
 					printf("Registered specialist:\n"
-								"- name: %s\n"
-								"- speciality: %s\n"
-								"- pid: %d\n",
-								doctor.name, doctor.speciality, doctor.pid);
+							"- name: %s\n"
+							"- speciality: %s\n"
+							"- pid: %d\n",
+							doctor.name, doctor.speciality, doctor.pid);
 				}
 			}
 			else if (control == 'P')
@@ -194,12 +195,12 @@ int main(void)
 						}
 						patient_queue = addPatient(patient_queue, &patient);
 						printf("Registered patient:\n"
-							"- name: %s\n"
-							"- symptoms: %s"
-							"- pid: %d\n"
-							"- speciality: %s",
-							patient.name, patient.symptoms, patient.pid,patient.speciality);
-							printf("Patient queue size for this speciality: %d\n",
+								"- name: %s\n"
+								"- symptoms: %s"
+								"- pid: %d\n"
+								"- speciality: %s",
+								patient.name, patient.symptoms, patient.pid,patient.speciality);
+						printf("Patient queue size for this speciality: %d\n",
 								getPatientQueueSize(patient_queue, patient.speciality));
 						close(fdp);
 					}
@@ -218,26 +219,26 @@ int main(void)
 
 int getPatientQueueSize(PatientList *patient_queue, char *speciality)
 {
-  int size = 0;
-  PatientList *aux = patient_queue;
-  int len = strlen(speciality)-3;
-  len = len > 0 ? len : 0;
+	int size = 0;
+	PatientList *aux = patient_queue;
+	int len = strlen(speciality)-3;
+	len = len > 0 ? len : 0;
 
-  while(aux != NULL)
-  {
+	while(aux != NULL)
+	{
 		if (strncmp(aux->patient.speciality, speciality, len) == 0)
-    	size++;
-    aux = aux->next;
-  }
-  return (size);
+			size++;
+		aux = aux->next;
+	}
+	return (size);
 }
 
 int getPatientPriority(Patient patient)
 {
-  for (int i=0; patient.speciality[i]; i++)\
-    if (patient.speciality[i+1] == '\n')
-        return patient.speciality[i] - '0'; 
-  return (3);
+	for (int i=0; patient.speciality[i]; i++)\
+		if (patient.speciality[i+1] == '\n')
+			return patient.speciality[i] - '0'; 
+	return (3);
 }
 
 DoctorList	*addDoctor(DoctorList *doctor_list, Doctor *doctor)
@@ -280,7 +281,7 @@ void	displayDoctorList(DoctorList *doctor_list)
 	while (aux)
 	{
 		printf("doctor: %s, %s\n", aux->doctor.name,
-			aux->doctor.speciality);
+				aux->doctor.speciality);
 		aux = aux->next;
 	}
 }
@@ -325,59 +326,116 @@ void	displayPatientList(PatientList *patient_queue)
 	while (aux)
 	{
 		printf("patient: %s, %s", aux->patient.name,
-			aux->patient.speciality);
+				aux->patient.speciality);
 		aux = aux->next;
 	}
 }
 
 PatientList* removePatientFromQueue(PatientList * patient_queue, int position)
 {
-  PatientList  *aux = patient_queue;
-  PatientList * temp = NULL;
-  int queue_size = getPatientQueueSize(patient_queue, "");
-  printf("siz%d pos %d\n", queue_size, position);
-  if(patient_queue != NULL)
-  {
-    if(position == 1 && queue_size >= 1)
-    {
-      temp = patient_queue;
-      patient_queue = patient_queue->next;
-      free(temp);
-    }
-    else if (position == queue_size && position !=0)
-    {
-      while(aux->next->next != NULL)
-        aux= aux->next; 
-      free(aux->next);
-      aux->next = NULL; 
-    }
-    else if(1 < position && position < queue_size)
-    {
-      for(int i=0;i<position-2;i++)
-      {
-        aux = aux->next;
-      }
-      temp = aux->next;
-      aux->next = aux->next->next;
-      free(temp);
-    }
-  }
-    return patient_queue;
+	int queue_size = getPatientQueueSize(patient_queue, "");
+	PatientList  *aux = patient_queue;
+	PatientList * temp = NULL;
+
+	if(patient_queue != NULL)
+	{
+		if(position == 1 && queue_size >= 1)
+		{
+			temp = patient_queue;
+			patient_queue = patient_queue->next;
+			free(temp);
+		}
+		else if (position == queue_size && position !=0)
+		{
+			while(aux->next->next != NULL)
+				aux= aux->next; 
+			free(aux->next);
+			aux->next = NULL; 
+		}
+		else if(1 < position && position < queue_size)
+		{
+			for(int i=0;i<position-2;i++)
+			{
+				aux = aux->next;
+			}
+			temp = aux->next;
+			aux->next = aux->next->next;
+			free(temp);
+		}
+	}
+	return patient_queue;
 }
 
+int getDoctorListSize(DoctorList *doctor_list, char *speciality)
+{
+	int size = 0;
+	DoctorList *aux = doctor_list;
+	int len = strlen(speciality)-3;
+	len = len > 0 ? len : 0;
 
-  static void	executeClassifier(int p1[2], int p2[2])
-  {
-    close(p1[1]);
-    close(p2[0]);
-    close(0);
-    dup(p1[0]);
-    close(1);
-    dup(p2[1]);
-    close(p1[0]);
-    close(p2[1]);
-    execl("classifier", "classifier", NULL);
-    fprintf(stderr, "An error occured while attempting to execute the classifier\n");
-    unlink(SFIFO);
-    exit(0);
-  }
+	while(aux != NULL)
+	{
+		if (strncmp(aux->doctor.speciality, speciality, len) == 0)
+			size++;
+		aux = aux->next;
+	}
+	return (size);
+}
+
+DoctorList* removeDoctor(DoctorList * doctor_list, int position)
+{
+	int list_size = getDoctorListSize(doctor_list, "");
+	DoctorList	*aux = doctor_list;
+	DoctorList	*temp = NULL;
+
+	if(doctor_list != NULL)
+	{
+		if(position == 1 && list_size >= 1)
+		{
+			if (doctor_list->doctor.busy == 0)
+			{
+				temp = doctor_list;
+				doctor_list = doctor_list->next;
+				free(temp);
+			}
+		}
+		else if (position == list_size && position !=0)
+		{
+			while(aux->next->next != NULL)
+				aux= aux->next; 
+			if (aux->next->doctor.busy == 0)
+			{
+				free(aux->next);
+				aux->next = NULL; 
+			}
+		}
+		else if(1 < position && position < list_size)
+		{
+			for(int i=0; i<position-2; i++)
+				aux = aux->next;
+			temp = aux->next;
+			if (temp->doctor.busy == 0)
+			{
+				aux->next = aux->next->next;
+				free(temp);
+			}
+		}
+	}
+	return doctor_list;
+}
+
+static void	executeClassifier(int p1[2], int p2[2])
+{
+	close(p1[1]);
+	close(p2[0]);
+	close(0);
+	dup(p1[0]);
+	close(1);
+	dup(p2[1]);
+	close(p1[0]);
+	close(p2[1]);
+	execl("classifier", "classifier", NULL);
+	fprintf(stderr, "An error occured while attempting to execute the classifier\n");
+	unlink(SFIFO);
+	exit(0);
+}
