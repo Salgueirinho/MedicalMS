@@ -10,6 +10,8 @@
 #include "utils.h"
 #include "doctor.h"
 
+int getPatientQueueSize(PatientList *patient_queue);
+int getPatientPriority(Patient patient);
 void	freePatientList(PatientList *patient_queue);
 void	displayPatientList(PatientList *patient_queue);
 PatientList	*addPatient(PatientList *patient_queue, Patient *patient);
@@ -129,7 +131,12 @@ int main(void)
 				}
 			}
 			else if (control == 'P')
-			{
+			{ 
+        if(getPatientQueueSize(patient_queue)>=5){
+          printf("Queue is full\n");
+          //add other stuff
+        }
+
 				if ((bytes = read(fd, &patient, sizeof(Patient))) == -1)
 				{
 					close(fd);
@@ -188,6 +195,7 @@ int main(void)
 							"- pid: %d\n"
 							"- speciality: %s",
 							patient.name, patient.symptoms, patient.pid,patient.speciality);
+              printf("Patient list size: %d\n", getPatientQueueSize(patient_queue));
 						close(fdp);
 					}
 				}
@@ -201,6 +209,31 @@ int main(void)
 	freePatientList(patient_queue);
 	freeDoctorList(doctor_list);
 	return (0);
+}
+
+int getPatientQueueSize(PatientList *patient_queue)
+{
+  int size = 0;
+  PatientList *aux = patient_queue;
+  while(aux != NULL)
+  {
+    ++size;
+    aux = aux->next;
+  }
+  return size;
+}
+
+int getPatientPriority(Patient patient)
+{
+  int p=-1;
+  for(int i=0; patient.speciality[i]!= '\0';i++)\
+  {
+    if (patient.speciality[i+1] == '\0')
+      {
+        return p = patient.speciality[i-1] - '0'; 
+      }
+  }
+  return p;
 }
 
 DoctorList	*addDoctor(DoctorList *doctor_list, Doctor *doctor)
@@ -288,7 +321,7 @@ void	displayPatientList(PatientList *patient_queue)
 	while (aux)
 	{
 		printf("patient: %s, %s", aux->patient.name,
-			aux->patient.symptoms);
+			aux->patient.speciality);
 		aux = aux->next;
 	}
 }
