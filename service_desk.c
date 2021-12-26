@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "doctor.h"
 
+void setTimeout(long int *tv_sec, int desired_value);
 PatientList *removePatientFromQueue(PatientList * patient_queue, int position);
 DoctorList* removeDoctor(DoctorList * doctor_list, int position);
 int getPatientQueueSize(PatientList *patient_queue, char *speciality);
@@ -91,14 +92,18 @@ int main(void)
 		fprintf(stderr, "An error occured while trying to open serice desk FIFO\n");
 		exit(0);
 	}
-	time.tv_sec = 1;
+	time.tv_sec = 10;
 	time.tv_usec = 0;
 	do {
 		FD_ZERO(&fds);
 		FD_SET(0, &fds);
 		FD_SET(fd, &fds);
 		bytes = select(fd + 1, &fds, NULL, NULL, &time);
-		if (bytes > 0 && FD_ISSET(0, &fds))
+    if (bytes == 0)
+    {
+      displayPatientList(patient_queue);
+    }
+    else if (bytes > 0 && FD_ISSET(0, &fds))
 		{
 			fgets(command, sizeof(command), stdin);
 			if (strcmp(command, "exit\n") == 0)
@@ -111,7 +116,9 @@ int main(void)
 				patient_queue = removePatientFromQueue(patient_queue, atoi(command + 5));
 			else if (strncmp(command, "deld ", 5) == 0)
 				doctor_list = removeDoctor(doctor_list, atoi(command + 5));
-		}
+      else if (strncmp(command, "freq ", 5) == 0)
+        setTimeout(&time.tv_sec, atoi(command+5));
+		  }
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
 			read(fd, &control , 1);
@@ -166,6 +173,7 @@ int main(void)
 							close(p1[1]);
 							close(p2[0]);
 							unlink(SFIFO);
+void setTimeout(long int *tv_sec, int desired_value);
 							fprintf(stderr, "An error occured while trying to read speciality\n");
 							exit(0);
 						}
@@ -438,4 +446,11 @@ static void	executeClassifier(int p1[2], int p2[2])
 	fprintf(stderr, "An error occured while attempting to execute the classifier\n");
 	unlink(SFIFO);
 	exit(0);
+}
+void setTimeout(long int *tv_sec, int desired_value)
+{
+  if(desired_value > 0)
+  {
+    *tv_sec = desired_value;
+  }
 }
