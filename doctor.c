@@ -24,13 +24,13 @@ int	main(int argc, char *argv[])
 		exit(0);
 	}
 	/*
-	sprintf(dfifo, DFIFO, me.pid);
-	if (mkfifo(dfifo, 0600) == -1)
-	{
-		putString("Error occured while trying to make FIFO\n", );
-		exit(0);
-	}
-	*/
+		 sprintf(dfifo, DFIFO, me.pid);
+		 if (mkfifo(dfifo, 0600) == -1)
+		 {
+		 putString("Error occured while trying to make FIFO\n", );
+		 exit(0);
+		 }
+	 */
 	if (access(SFIFO, F_OK) != 0)
 	{
 		fprintf(stderr, "Error, service desk FIFO doesn't exist\n");
