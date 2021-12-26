@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "doctor.h"
 
+PatientList *removePatientFromQueue(PatientList * patient_queue, int position);
 int getPatientQueueSize(PatientList *patient_queue, char *speciality);
 int getPatientPriority(Patient patient);
 void	freePatientList(PatientList *patient_queue);
@@ -105,6 +106,10 @@ int main(void)
 				displayPatientList(patient_queue);
 			else if (strcmp(command, "doctors\n") == 0)
 				displayDoctorList(doctor_list);
+      else if (strncmp(command, "delp ", 5) == 0)
+      {
+        patient_queue = removePatientFromQueue(patient_queue, atoi(command+5));
+      }
 		}
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
@@ -214,11 +219,13 @@ int main(void)
 int getPatientQueueSize(PatientList *patient_queue, char *speciality)
 {
   int size = 0;
-
   PatientList *aux = patient_queue;
+  int len = strlen(speciality)-3;
+  len = len > 0 ? len : 0;
+
   while(aux != NULL)
   {
-		if (strncmp(aux->patient.speciality, speciality, strlen(speciality) - 3) == 0)
+		if (strncmp(aux->patient.speciality, speciality, len) == 0)
     	size++;
     aux = aux->next;
   }
@@ -323,18 +330,54 @@ void	displayPatientList(PatientList *patient_queue)
 	}
 }
 
-static void	executeClassifier(int p1[2], int p2[2])
+PatientList* removePatientFromQueue(PatientList * patient_queue, int position)
 {
-	close(p1[1]);
-	close(p2[0]);
-	close(0);
-	dup(p1[0]);
-	close(1);
-	dup(p2[1]);
-	close(p1[0]);
-	close(p2[1]);
-	execl("classifier", "classifier", NULL);
-	fprintf(stderr, "An error occured while attempting to execute the classifier\n");
-	unlink(SFIFO);
-	exit(0);
+  PatientList  *aux = patient_queue;
+  PatientList * temp = NULL;
+  int queue_size = getPatientQueueSize(patient_queue, "");
+  printf("siz%d pos %d\n", queue_size, position);
+  if(patient_queue != NULL)
+  {
+    if(position == 1 && queue_size >= 1)
+    {
+      temp = patient_queue;
+      patient_queue = patient_queue->next;
+      free(temp);
+    }
+    else if (position == queue_size && position !=0)
+    {
+      while(aux->next->next != NULL)
+        aux= aux->next; 
+      free(aux->next);
+      aux->next = NULL; 
+    }
+    else if(1 < position && position < queue_size)
+    {
+      for(int i=0;i<position-2;i++)
+      {
+        aux = aux->next;
+      }
+      temp = aux->next;
+      aux->next = aux->next->next;
+      free(temp);
+    }
+  }
+    return patient_queue;
 }
+
+
+  static void	executeClassifier(int p1[2], int p2[2])
+  {
+    close(p1[1]);
+    close(p2[0]);
+    close(0);
+    dup(p1[0]);
+    close(1);
+    dup(p2[1]);
+    close(p1[0]);
+    close(p2[1]);
+    execl("classifier", "classifier", NULL);
+    fprintf(stderr, "An error occured while attempting to execute the classifier\n");
+    unlink(SFIFO);
+    exit(0);
+  }
