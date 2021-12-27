@@ -10,6 +10,8 @@
 #include "utils.h"
 #include "doctor.h"
 
+void setBusyDoctor(DoctorList * doctor_list, int pid, int status);
+int getNotBusyDoctor(DoctorList *doctor_list, char *speciality);
 void setTimeout(long int *tv_sec, int desired_value);
 PatientList *removePatientFromQueue(PatientList * patient_queue, int position);
 DoctorList* removeDoctor(DoctorList * doctor_list, int position);
@@ -223,6 +225,36 @@ int main(void)
 	freePatientList(patient_queue);
 	freeDoctorList(doctor_list);
 	return (0);
+}
+
+void setBusyDoctor(DoctorList * doctor_list, int pid, int status)
+{
+  DoctorList *aux = doctor_list;
+
+  while (aux->next != NULL)
+  {
+    if (aux->doctor.pid == pid)
+    {
+      aux->doctor.busy = status;
+      return;
+    }
+    aux = aux->next;
+  }
+}
+
+int getNotBusyDoctor(DoctorList *doctor_list, char *speciality)
+{
+  // returns pid
+  DoctorList * aux = doctor_list;
+
+  while (aux->next != NULL)
+  {
+    if (aux->doctor.busy == 0 && strncmp(aux->doctor.speciality, speciality, 5) == 0)
+    {
+      return (aux->doctor.pid);
+    }
+  }
+  return -1;
 }
 
 int getPatientQueueSize(PatientList *patient_queue, char *speciality)
