@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "doctor.h"
 
+void currentOccupation(PatientList *patient_queue);
 void setBusyDoctor(DoctorList * doctor_list, int pid, int status);
 int getNotBusyDoctor(DoctorList *doctor_list, char *speciality);
 void setTimeout(long int *tv_sec, int desired_value);
@@ -103,7 +104,7 @@ int main(void)
 		bytes = select(fd + 1, &fds, NULL, NULL, &time);
 		if (bytes == 0)
 		{
-			displayPatientList(patient_queue);
+      currentOccupation(patient_queue);
 		}
 		else if (bytes > 0 && FD_ISSET(0, &fds))
 		{
@@ -225,6 +226,21 @@ int main(void)
 	freePatientList(patient_queue);
 	freeDoctorList(doctor_list);
 	return (0);
+}
+
+void currentOccupation(PatientList *patient_queue)
+{
+  int ngeral          = getPatientQueueSize(patient_queue, "geral");
+  int nortopedia      = getPatientQueueSize(patient_queue, "ortopedia");
+  int nestomatologia  = getPatientQueueSize(patient_queue, "estomatologia");
+  int nneurologia     = getPatientQueueSize(patient_queue, "neurologia");
+  int noftalmologia   = getPatientQueueSize(patient_queue, "oftalmologia");
+  printf("Speciality \t Number of patients\n"
+  "geral \t\t %d\n"
+  "ortopedia \t %d\n"
+  "estomatologia \t %d\n"
+  "neurologia \t %d\n"
+  "oftalmologia \t %d\n", ngeral, nortopedia, nestomatologia, nneurologia, noftalmologia);
 }
 
 void setBusyDoctor(DoctorList * doctor_list, int pid, int status)
