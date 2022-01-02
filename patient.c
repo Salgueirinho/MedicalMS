@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
 {
 	Patient	me = {"", "", getpid(), ""};
 	char	pfifo[20] = "";
+  char  message[255] = "";
 	int		fdp;
 	int		fd;
 
@@ -82,6 +83,13 @@ int main(int argc, char *argv[])
 	}
 	close(fdp);
 	printf("Your speciality: %s", me.speciality);
+  
+  while(strcmp(message, "exit") != 0)
+  {
+    printf("Command: ");
+    scanf("%255s", message);
+  }
+
 	unlink(pfifo);
 	exit(0);
 }

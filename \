@@ -60,10 +60,9 @@ int	main(int argc, char *argv[])
 		//unlink(dfifo);
 		exit(0);
 	}
-  while (strcmp(message, "exit") != 0)
+  while (1)
   {
-    printf("command: ");
-    scanf("%255s", message);
+
   }
 	close(fd);
 	return (0);
