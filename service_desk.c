@@ -10,8 +10,8 @@
 #include "utils.h"
 #include "doctor.h"
 
-void currentOccupation(PatientList *patient_queue);
-void setBusyDoctor(DoctorList * doctor_list, int pid, int status);
+//void setBusyDoctor(DoctorList * doctor_list, int pid, int status);
+void displayAllPatientQueueSize(PatientList *patient_queue);
 int getNotBusyDoctor(DoctorList *doctor_list, char *speciality);
 void setTimeout(long int *tv_sec, int desired_value);
 PatientList *removePatientFromQueue(PatientList * patient_queue, int position);
@@ -104,7 +104,7 @@ int main(void)
 		bytes = select(fd + 1, &fds, NULL, NULL, &time);
 		if (bytes == 0)
 		{
-      currentOccupation(patient_queue);
+      displayAllPatientQueueSize(patient_queue);
 		}
 		else if (bytes > 0 && FD_ISSET(0, &fds))
 		{
@@ -228,21 +228,22 @@ int main(void)
 	return (0);
 }
 
-void currentOccupation(PatientList *patient_queue)
+void displayAllPatientQueueSize(PatientList *patient_queue)
 {
-  int ngeral          = getPatientQueueSize(patient_queue, "geral");
-  int nortopedia      = getPatientQueueSize(patient_queue, "ortopedia");
-  int nestomatologia  = getPatientQueueSize(patient_queue, "estomatologia");
-  int nneurologia     = getPatientQueueSize(patient_queue, "neurologia");
-  int noftalmologia   = getPatientQueueSize(patient_queue, "oftalmologia");
-  printf("Speciality \t Number of patients\n"
-  "geral \t\t %d\n"
-  "ortopedia \t %d\n"
-  "estomatologia \t %d\n"
-  "neurologia \t %d\n"
-  "oftalmologia \t %d\n", ngeral, nortopedia, nestomatologia, nneurologia, noftalmologia);
+  printf("Speciality\tPatients\n"
+  "geral\t\t%d\n"
+  "ortopedia\t%d\n"
+  "estomatologia\t%d\n"
+  "neurologia\t%d\n"
+  "oftalmologia\t%d\n",
+	getPatientQueueSize(patient_queue, "geral"),
+	getPatientQueueSize(patient_queue, "ortopedia"),
+	getPatientQueueSize(patient_queue, "estomatologia"),
+	getPatientQueueSize(patient_queue, "neurologia"),
+	getPatientQueueSize(patient_queue, "oftalmologia"));
 }
 
+/*
 void setBusyDoctor(DoctorList * doctor_list, int pid, int status)
 {
   DoctorList *aux = doctor_list;
@@ -257,15 +258,15 @@ void setBusyDoctor(DoctorList * doctor_list, int pid, int status)
     aux = aux->next;
   }
 }
+*/
 
 int getNotBusyDoctor(DoctorList *doctor_list, char *speciality)
 {
-  // returns pid
   DoctorList * aux = doctor_list;
 
   while (aux->next != NULL)
   {
-    if (aux->doctor.busy == 0 && strncmp(aux->doctor.speciality, speciality, 5) == 0)
+    if (aux->doctor.busy == 0 && strncmp(aux->doctor.speciality, speciality, strlen(speciality)) == 0)
     {
       return (aux->doctor.pid);
     }
