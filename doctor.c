@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include "doctor.h"
 #include "service_desk.h"
 #include "utils.h"
@@ -10,8 +11,8 @@
 int	main(int argc, char *argv[])
 {
 	Doctor	me = {"", "", getpid(), false};
-	//char		dfifo[20] = "";
-  char    message[255] = "";
+	char		dfifo[20] = "";
+	char    message[255] = "";
 	int			fd;
 
 	if (serviceDeskIsRunning(0) == false)
@@ -24,18 +25,16 @@ int	main(int argc, char *argv[])
 		fprintf(stderr, "%s <name> <speciality>\n", argv[0]);
 		exit(0);
 	}
-	/*
-		 sprintf(dfifo, DFIFO, me.pid);
-		 if (mkfifo(dfifo, 0600) == -1)
-		 {
-		 putString("Error occured while trying to make FIFO\n", );
-		 exit(0);
-		 }
-	 */
+	sprintf(dfifo, DFIFO, me.pid);
+	if (mkfifo(dfifo, 0600) == -1)
+	{
+		fprintf(stderr, "Error occured while trying to make FIFO\n");
+		exit(0);
+	}
 	if (access(SFIFO, F_OK) != 0)
 	{
 		fprintf(stderr, "Error, service desk FIFO doesn't exist\n");
-		//unlink(dfifo);
+		unlink(dfifo);
 		exit(0);
 	}
 	strncpy(me.name, argv[1], sizeof(me.name));
@@ -43,28 +42,28 @@ int	main(int argc, char *argv[])
 	if ((fd = open(SFIFO, O_WRONLY)) == -1)
 	{
 		fprintf(stderr, "Couldn't open named pipe file\n");
-		//unlink(dfifo);
+		unlink(dfifo);
 		exit(0);
 	}
 	if (write(fd, "D", 1) == -1)
 	{
 		fprintf(stderr, "Couldn't write to named pipe\n");
 		close(fd);
-		//unlink(dfifo);
+		unlink(dfifo);
 		exit(0);
 	}
 	if (write(fd, &me, sizeof(Doctor)) == -1)
 	{
 		fprintf(stderr, "Couldn't write to named pipe\n");
 		close(fd);
-		//unlink(dfifo);
+		unlink(dfifo);
 		exit(0);
 	}
-  while (strcmp(message, "exit") != 0)
-  {
-    printf("command: ");
-    scanf("%255s", message);
-  }
+	while (strcmp(message, "exit") != 0)
+	{
+		printf("command: ");
+		scanf("%255s", message);
+	}
 	close(fd);
 	return (0);
 }
