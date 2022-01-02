@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
 	Patient	me = {"", "", getpid(), ""};
 	char	pfifo[20] = "";
   char  message[255] = "";
+	int		queue_size;
 	int		fdp;
 	int		fd;
 
@@ -81,8 +82,16 @@ int main(int argc, char *argv[])
 		unlink(pfifo);
 		exit(0);
 	}
+	if (read(fdp, &queue_size, sizeof(int)) == -1)
+	{
+		fprintf(stderr, "Couldn't read from named pipe\n");
+		close(fd);
+		unlink(pfifo);
+		exit(0);
+	}
 	close(fdp);
 	printf("Your speciality: %s", me.speciality);
+	printf("Patients in front of you: %d\n", queue_size);
   
   while(strcmp(message, "exit") != 0)
   {

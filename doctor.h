@@ -6,6 +6,7 @@
 typedef struct	Doctor {
 	char	name[50];
 	char	speciality[50];
+	char	signal[40];
 	int		pid;
 	int		busy;
 } Doctor;

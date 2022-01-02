@@ -11,6 +11,7 @@
 #include "doctor.h"
 
 //void setBusyDoctor(DoctorList * doctor_list, int pid, int status);
+int	getQueueInFrontOfPatient(PatientList *patient_queue, Patient patient);
 void displayAllPatientQueueSize(PatientList *patient_queue);
 int getNotBusyDoctor(DoctorList *doctor_list, char *speciality);
 void setTimeout(long int *tv_sec, int desired_value);
@@ -29,7 +30,7 @@ static void	executeClassifier(int p1[2], int p2[2]);
 int main(void)
 {
 	Patient	patient = {"default", "", 0, "geral"};
-	Doctor	doctor = {"default", "", 0, false};
+	Doctor	doctor = {"default", "", "", 0, false};
 	PatientList	*patient_queue = NULL;
 	DoctorList	*doctor_list = NULL;
 	char command[40] = "";
@@ -204,6 +205,17 @@ int main(void)
 							fprintf(stderr, "An error occured while trying to write speciality\n");
 							exit(0);
 						}
+						bytes = getQueueInFrontOfPatient(patient_queue, patient);
+						if (write(fdp, &bytes, sizeof(int)) == -1)
+						{
+							close(fdp);
+							close(fd);
+							close(p1[1]);
+							close(p2[0]);
+							unlink(SFIFO);
+							fprintf(stderr, "An error occured while trying to write queue size\n");
+							exit(0);
+						}
 						patient_queue = addPatient(patient_queue, &patient);
 						printf("Registered patient:\n"
 								"- name: %s\n"
@@ -272,6 +284,23 @@ int getNotBusyDoctor(DoctorList *doctor_list, char *speciality)
     }
   }
   return -1;
+}
+
+int	getQueueInFrontOfPatient(PatientList *patient_queue, Patient patient)
+{
+	int size = 0;
+	PatientList *aux = patient_queue;
+	int len = strlen(patient.speciality)-3;
+	len = len > 0 ? len : 0;
+
+	while(aux != NULL)
+	{
+		if (strncmp(aux->patient.speciality, patient.speciality, len) == 0
+			&& getPatientPriority(patient) <= getPatientPriority(aux->patient))
+			size++;
+		aux = aux->next;
+	}
+	return (size);
 }
 
 int getPatientQueueSize(PatientList *patient_queue, char *speciality)

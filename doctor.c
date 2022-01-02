@@ -10,10 +10,16 @@
 
 int	main(int argc, char *argv[])
 {
-	Doctor	me = {"", "", getpid(), false};
+	Doctor	me = {"", "", "", getpid(), false};
 	char		dfifo[20] = "";
-	char    message[255] = "";
+	char    command[255] = "";
 	int			fd;
+	struct timeval time;
+	int bytes = -1;
+	//int pid = -1;
+	//int fdp = -1;
+	//char	control;
+	fd_set fds;
 
 	if (serviceDeskIsRunning(0) == false)
 	{
@@ -59,11 +65,26 @@ int	main(int argc, char *argv[])
 		unlink(dfifo);
 		exit(0);
 	}
-	while (strcmp(message, "exit") != 0)
-	{
-		printf("command: ");
-		scanf("%255s", message);
-	}
+	sprintf(me.signal, "M%d still alive\n", me.pid);
+	time.tv_sec = 20;
+	time.tv_usec = 0;
+	do {
+		FD_ZERO(&fds);
+		FD_SET(0, &fds);
+		FD_SET(fd, &fds);
+		bytes = select(fd + 1, &fds, NULL, NULL, &time);
+		write(fd, me.signal, strlen(me.signal));
+		if (bytes > 0 && FD_ISSET(0, &fds))
+		{
+			fgets(command, sizeof(command), stdin);
+			if (strcmp(command, "exit\n") == 0)
+				break;
+		}
+		else if (bytes > 0 && FD_ISSET(fd, &fds))
+		{
+			
+		}
+	} while (true);
 	close(fd);
 	return (0);
 }
