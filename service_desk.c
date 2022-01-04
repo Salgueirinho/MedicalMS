@@ -109,7 +109,15 @@ int main(void)
 		}
 		else if (bytes > 0 && FD_ISSET(0, &fds))
 		{
-			fgets(command, sizeof(command), stdin);
+			if (fgets(command, sizeof(command), stdin) == NULL)
+			{
+				close(fd);
+				close(p1[1]);
+				close(p2[0]);
+				unlink(SFIFO);
+				fprintf(stderr, "An error occured while trying to get command\n");
+				exit(0);
+			}
 			if (strcmp(command, "exit\n") == 0)
 				break;
 			else if (strcmp(command, "patients\n") == 0)
@@ -125,7 +133,15 @@ int main(void)
 		}
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
-			read(fd, &control , 1);
+			if (read(fd, &control , 1) == -1)
+			{
+				close(fd);
+				close(p1[1]);
+				close(p2[0]);
+				unlink(SFIFO);
+				fprintf(stderr, "An error occured while trying to read control character\n");
+				exit(0);
+			}
 			if (control == 'D')
 			{
 				if ((bytes = read(fd, &doctor, sizeof(Doctor))) == -1)
@@ -515,9 +531,15 @@ static void	executeClassifier(int p1[2], int p2[2])
 	close(p1[1]);
 	close(p2[0]);
 	close(0);
-	dup(p1[0]);
+	if (dup(p1[0]) == -1)
+	{
+		// do something
+	}
 	close(1);
-	dup(p2[1]);
+	if (dup(p2[0]) == -1)
+	{
+		// do something
+	}
 	close(p1[0]);
 	close(p2[1]);
 	execl("classifier", "classifier", NULL);

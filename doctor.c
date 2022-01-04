@@ -43,8 +43,8 @@ int	main(int argc, char *argv[])
 		unlink(dfifo);
 		exit(0);
 	}
-	strncpy(me.name, argv[1], sizeof(me.name));
-	strncpy(me.speciality, argv[2], sizeof(me.speciality));
+	strncpy(me.name, argv[1], sizeof(me.name) - 1);
+	strncpy(me.speciality, argv[2], sizeof(me.speciality) - 1);
 	if ((fd = open(SFIFO, O_WRONLY)) == -1)
 	{
 		fprintf(stderr, "Couldn't open named pipe file\n");
@@ -73,16 +73,28 @@ int	main(int argc, char *argv[])
 		FD_SET(0, &fds);
 		FD_SET(fd, &fds);
 		bytes = select(fd + 1, &fds, NULL, NULL, &time);
-		write(fd, me.signal, strlen(me.signal));
+		if (write(fd, me.signal, strlen(me.signal)) == -1)
+		{
+			fprintf(stderr, "Couldn't write to named pipe\n");
+			close(fd);
+			unlink(dfifo);
+			exit(0);
+		}
 		if (bytes > 0 && FD_ISSET(0, &fds))
 		{
-			fgets(command, sizeof(command), stdin);
+			if (fgets(command, sizeof(command), stdin) == NULL)
+			{
+				fprintf(stderr, "Couldn't get command\n");
+				close(fd);
+				unlink(dfifo);
+				exit(0);
+			}
 			if (strcmp(command, "exit\n") == 0)
 				break;
 		}
 		else if (bytes > 0 && FD_ISSET(fd, &fds))
 		{
-			
+
 		}
 	} while (true);
 	close(fd);

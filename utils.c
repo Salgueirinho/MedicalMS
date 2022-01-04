@@ -38,7 +38,8 @@ int	putNumber(int n, int fd)
 		i = 0;
 		if (n < 0)
 		{
-			write(fd, "-", 1);
+			if (write(fd, "-", 1) == -1)
+				return -1;
 			n *= -1;
 		}
 		while (i < len)
