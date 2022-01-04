@@ -105,7 +105,7 @@ int main(void)
 		bytes = select(fd + 1, &fds, NULL, NULL, &time);
 		if (bytes == 0)
 		{
-      displayAllPatientQueueSize(patient_queue);
+			displayAllPatientQueueSize(patient_queue);
 		}
 		else if (bytes > 0 && FD_ISSET(0, &fds))
 		{
@@ -258,48 +258,48 @@ int main(void)
 
 void displayAllPatientQueueSize(PatientList *patient_queue)
 {
-  printf("Speciality\tPatients\n"
-  "geral\t\t%d\n"
-  "ortopedia\t%d\n"
-  "estomatologia\t%d\n"
-  "neurologia\t%d\n"
-  "oftalmologia\t%d\n",
-	getPatientQueueSize(patient_queue, "geral"),
-	getPatientQueueSize(patient_queue, "ortopedia"),
-	getPatientQueueSize(patient_queue, "estomatologia"),
-	getPatientQueueSize(patient_queue, "neurologia"),
-	getPatientQueueSize(patient_queue, "oftalmologia"));
+	printf("Speciality\tPatients\n"
+			"geral\t\t%d\n"
+			"ortopedia\t%d\n"
+			"estomatologia\t%d\n"
+			"neurologia\t%d\n"
+			"oftalmologia\t%d\n",
+			getPatientQueueSize(patient_queue, "geral"),
+			getPatientQueueSize(patient_queue, "ortopedia"),
+			getPatientQueueSize(patient_queue, "estomatologia"),
+			getPatientQueueSize(patient_queue, "neurologia"),
+			getPatientQueueSize(patient_queue, "oftalmologia"));
 }
 
 /*
-void setBusyDoctor(DoctorList * doctor_list, int pid, int status)
-{
-  DoctorList *aux = doctor_list;
+   void setBusyDoctor(DoctorList * doctor_list, int pid, int status)
+   {
+   DoctorList *aux = doctor_list;
 
-  while (aux->next != NULL)
-  {
-    if (aux->doctor.pid == pid)
-    {
-      aux->doctor.busy = status;
-      return;
-    }
-    aux = aux->next;
-  }
-}
-*/
+   while (aux->next != NULL)
+   {
+   if (aux->doctor.pid == pid)
+   {
+   aux->doctor.busy = status;
+   return;
+   }
+   aux = aux->next;
+   }
+   }
+   */
 
 int getNotBusyDoctor(DoctorList *doctor_list, char *speciality)
 {
-  DoctorList * aux = doctor_list;
+	DoctorList * aux = doctor_list;
 
-  while (aux->next != NULL)
-  {
-    if (aux->doctor.busy == 0 && strncmp(aux->doctor.speciality, speciality, strlen(speciality)) == 0)
-    {
-      return (aux->doctor.pid);
-    }
-  }
-  return -1;
+	while (aux->next != NULL)
+	{
+		if (aux->doctor.busy == 0 && strncmp(aux->doctor.speciality, speciality, strlen(speciality)) == 0)
+		{
+			return (aux->doctor.pid);
+		}
+	}
+	return -1;
 }
 
 int	getQueueInFrontOfPatient(PatientList *patient_queue, Patient patient)
@@ -312,7 +312,7 @@ int	getQueueInFrontOfPatient(PatientList *patient_queue, Patient patient)
 	while(aux != NULL)
 	{
 		if (strncmp(aux->patient.speciality, patient.speciality, len) == 0
-			&& getPatientPriority(patient) <= getPatientPriority(aux->patient))
+				&& getPatientPriority(patient) <= getPatientPriority(aux->patient))
 			size++;
 		aux = aux->next;
 	}
