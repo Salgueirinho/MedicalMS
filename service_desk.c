@@ -9,6 +9,7 @@
 #include "patient.h"
 #include "utils.h"
 #include "doctor.h"
+#include <pthread.h>
 
 //void setBusyDoctor(DoctorList * doctor_list, int pid, int status);
 int	getQueueInFrontOfPatient(PatientList *patient_queue, Patient patient);
@@ -26,13 +27,17 @@ void	freeDoctorList(DoctorList *doctor_list);
 void	displayDoctorList(DoctorList *doctor_list);
 DoctorList	*addDoctor(DoctorList *doctor_list, Doctor *doctor);
 static void	executeClassifier(int p1[2], int p2[2]);
+bool checkInList(DoctorList *doctor_list, int pid);
+DoctorList * resetDoctorTimer(DoctorList *doctor_list, int pid);
+void	*decrement(void *doctor_list);
 
 int main(void)
 {
 	Patient	patient = {"default", "", 0, "geral"};
-	Doctor	doctor = {"default", "", "", 0, false};
+	Doctor	doctor = {"default", "", "", 0, 0, 21};
 	PatientList	*patient_queue = NULL;
 	DoctorList	*doctor_list = NULL;
+  	DoctorList	**doctor_list_pointer = &doctor_list;
 	char command[40] = "";
 	char pfifo[15] = "";
 	int p1[2] = {-1, -1};
@@ -44,6 +49,8 @@ int main(void)
 	int fdp = -1;
 	char	control;
 	fd_set fds;
+  pthread_t	decrementer;
+
 
 	if (serviceDeskIsRunning((int)getpid()) == true)
 	{
@@ -98,6 +105,8 @@ int main(void)
 	}
 	time.tv_sec = 10;
 	time.tv_usec = 0;
+
+	pthread_create(&decrementer, NULL, decrement, (void *) doctor_list_pointer);
 	do {
 		FD_ZERO(&fds);
 		FD_SET(0, &fds);
@@ -142,28 +151,45 @@ int main(void)
 				fprintf(stderr, "An error occured while trying to read control character\n");
 				exit(0);
 			}
-			if (control == 'D')
-			{
-				if ((bytes = read(fd, &doctor, sizeof(Doctor))) == -1)
-				{
-					close(fd);
-					close(p1[1]);
-					close(p2[0]);
-					unlink(SFIFO);
-					fprintf(stderr, "An error occured while trying to read doctor's details\n");
-					exit(0);
-				}
-				if (bytes == sizeof(Doctor))
-				{
-					doctor_list = addDoctor(doctor_list, &doctor);
-					printf("Registered specialist:\n"
-							"- name: %s\n"
-							"- speciality: %s\n"
-							"- pid: %d\n",
-							doctor.name, doctor.speciality, doctor.pid);
-				}
-			}
-			else if (control == 'P')
+      if (control == 'D')
+      {
+        if ((bytes = read(fd, &doctor, sizeof(Doctor))) == -1)
+        {
+          close(fd);
+          close(p1[1]);
+          close(p2[0]);
+          unlink(SFIFO);
+          fprintf(stderr, "An error occured while trying to read doctor's details\n");
+          exit(0);
+        }
+        if (bytes == sizeof(Doctor))
+        {
+          doctor_list = addDoctor(doctor_list, &doctor);
+          printf("Registered specialist:\n"
+          "- name: %s\n"
+          "- speciality: %s\n"
+          "- pid: %d\n",
+          doctor.name, doctor.speciality, doctor.pid);
+        }
+      }
+      else if (control == 'N')
+      {
+        if ((bytes = read(fd, &doctor.pid, sizeof(int))) == -1)
+        {
+          close(fd);
+          close(p1[1]);
+          close(p2[0]);
+          unlink(SFIFO);
+          fprintf(stderr, "An error occured while trying to read doctor's details\n");
+          exit(0);
+        }
+        if(checkInList(doctor_list, doctor.pid))
+          {
+            printf("1\n");
+            doctor_list = resetDoctorTimer(doctor_list, doctor.pid);
+          }
+      }
+      else if (control == 'P')
 			{ 
 				if ((bytes = read(fd, &patient, sizeof(Patient))) == -1)
 				{
@@ -254,6 +280,64 @@ int main(void)
 	freePatientList(patient_queue);
 	freeDoctorList(doctor_list);
 	return (0);
+}
+
+void	*decrement(void *doctor_list)
+{
+	DoctorList	**aux1;
+	DoctorList	*aux2;
+	DoctorList	*aux3;
+
+	int	counter;
+
+	aux1 = (DoctorList **) doctor_list;
+	while (true)
+	{
+		aux2 = (DoctorList *) *aux1;
+		counter = 0;
+		while (aux2 != NULL)
+		{
+			counter++;
+			aux2->doctor.timer--;
+			printf("%d: %d, counter = %d\n", aux2->doctor.pid, aux2->doctor.timer, counter);
+      aux3 = aux2->next;
+			if (aux2->doctor.timer == 0)
+      {
+				*aux1 = removeDoctor(*aux1, counter);
+        counter--;
+      }
+      aux2 = aux3;
+		}
+		sleep(1);
+	}
+	return (doctor_list);
+}
+
+bool checkInList(DoctorList *doctor_list, int pid)
+{
+  DoctorList *aux = doctor_list;
+  while(aux != NULL)
+  {
+    if (aux->doctor.pid == pid)
+      return true;
+    aux = aux->next;
+  }
+  return false;
+}
+
+DoctorList * resetDoctorTimer(DoctorList *doctor_list, int pid)
+{
+  DoctorList *aux = doctor_list;
+  while(aux != NULL)
+  {
+    if (aux->doctor.pid == pid)
+    {
+      aux->doctor.timer = 21;
+      break;
+    }
+    aux = aux->next;
+  }
+  return doctor_list;
 }
 
 void displayAllPatientQueueSize(PatientList *patient_queue)
