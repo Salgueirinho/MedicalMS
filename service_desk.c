@@ -191,8 +191,8 @@ int main(void)
         }
         if(checkInList(doctor_list, doctor.pid))
           {
-            printf("1\n");
             doctor_list = resetDoctorTimer(doctor_list, doctor.pid);
+            printf("Received life signal from %d\n", doctor.pid);
           }
       }
       else if (control == 'P')
@@ -305,10 +305,10 @@ void	*decrement(void *doctor_list)
 		{
 			counter++;
 			aux2->doctor.timer--;
-			printf("%d: %d, counter = %d\n", aux2->doctor.pid, aux2->doctor.timer, counter);
       aux3 = aux2->next;
 			if (aux2->doctor.timer == 0)
       {
+        printf("Didn't received life signal on time for %d\n", aux2->doctor.pid);
 				*aux1 = removeDoctor(*aux1, counter);
         counter--;
       }
