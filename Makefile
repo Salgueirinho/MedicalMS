@@ -6,7 +6,7 @@ OBJECTS	= $(patsubst %.c, %, $(SOURCES))
 
 UTILS = utils.o
 
-FLAGS		= -Wall -Wextra -Werror
+FLAGS		= -Wall -Wextra -Werror -pthread
 
 CC			= gcc $(FLAGS)
 
