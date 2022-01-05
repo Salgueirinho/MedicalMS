@@ -7,10 +7,34 @@
 #include "doctor.h"
 #include "service_desk.h"
 #include "utils.h"
+#include <pthread.h>
+
+void *sendSignal(void* data)
+{
+  Signal* sig = (Signal *) data;
+  while(true)
+  {
+    sleep(20);
+    if(write(sig->fd, "N", 1) == -1)
+    {
+      fprintf(stderr, "Couldn't write to FIFO\n");
+      close(sig->fd);
+      exit(-1);
+    }
+    if ((write(sig->fd, &sig->pid, sizeof(int)) == -1))
+    {
+      fprintf(stderr, "Couldn't write to FIFO\n");
+      close(sig->fd);
+      exit(-1);
+    }
+  }
+  close(sig->fd);
+}
+
 
 int	main(int argc, char *argv[])
 {
-	Doctor	me = {"", "", "", getpid(), false};
+	Doctor	me = {"", "", "", getpid(), 0, 21};
 	char		dfifo[20] = "";
 	char    command[255] = "";
 	int			fd;
@@ -20,6 +44,7 @@ int	main(int argc, char *argv[])
 	//int fdp = -1;
 	//char	control;
 	fd_set fds;
+  pthread_t tid = -1;
 
 	if (serviceDeskIsRunning(0) == false)
 	{
@@ -68,6 +93,10 @@ int	main(int argc, char *argv[])
 	sprintf(me.signal, "M%d still alive\n", me.pid);
 	time.tv_sec = 20;
 	time.tv_usec = 0;
+    
+  Signal sig = {(int) getpid(), fd};
+  pthread_create(&tid,NULL, sendSignal, (void *) &sig);
+
 	do {
 		FD_ZERO(&fds);
 		FD_SET(0, &fds);
