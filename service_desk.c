@@ -128,7 +128,13 @@ int main(void)
 				exit(0);
 			}
 			if (strcmp(command, "exit\n") == 0)
-				break;
+      {
+        if(write(p1[1], "#fim\n", 5) == -1)
+        {
+          fprintf(stderr, "An error occured while trying to write to classifier\n");
+        }
+        break;
+      }
 			else if (strcmp(command, "patients\n") == 0)
 				displayPatientList(patient_queue);
 			else if (strcmp(command, "doctors\n") == 0)
@@ -620,7 +626,7 @@ static void	executeClassifier(int p1[2], int p2[2])
 		// do something
 	}
 	close(1);
-	if (dup(p2[0]) == -1)
+	if (dup(p2[1]) == -1)
 	{
 		// do something
 	}

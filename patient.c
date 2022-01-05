@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 	printf("Your speciality: %s", me.speciality);
 	printf("Patients in front of you: %d\n", queue_size);
 
-	while(strcmp(message, "exit") != 0)
+	while(strcmp(message, "exit\n") != 0)
 	{
 		printf("Command: ");
 		if (fgets(message, sizeof(message) - 1, stdin) == NULL)
