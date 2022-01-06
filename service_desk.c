@@ -31,13 +31,20 @@ bool checkInList(DoctorList *doctor_list, int pid);
 DoctorList * resetDoctorTimer(DoctorList *doctor_list, int pid);
 void	*decrement(void *doctor_list);
 
+void	handleSIGINT(int i)
+{
+	(void) i;
+	printf("\nCtrl + c causes issues with this program due to SIGINT handling on"
+				" the classifier's end, therefor, to avoid bugs, write exit!\n");
+}
+
 int main(void)
 {
 	Patient	patient = {"default", "", 0, "geral"};
 	Doctor	doctor = {"default", "", "", 0, 0, 21};
 	PatientList	*patient_queue = NULL;
 	DoctorList	*doctor_list = NULL;
-  	DoctorList	**doctor_list_pointer = &doctor_list;
+ 	DoctorList	**doctor_list_pointer = &doctor_list;
 	char command[40] = "";
 	char pfifo[15] = "";
 	int p1[2] = {-1, -1};
@@ -51,7 +58,11 @@ int main(void)
 	fd_set fds;
   pthread_t	decrementer;
 
-
+	if (signal(SIGINT, handleSIGINT) == SIG_ERR)
+	{
+		fprintf(stderr, "It wasn't possible to configure SIGINT\n");
+		exit(-1);
+	}
 	if (serviceDeskIsRunning((int)getpid()) == true)
 	{
 		fprintf(stderr, "There is already a service desk running!\n");
@@ -225,7 +236,6 @@ int main(void)
 							close(p1[1]);
 							close(p2[0]);
 							unlink(SFIFO);
-							void setTimeout(long int *tv_sec, int desired_value);
 							fprintf(stderr, "An error occured while trying to read speciality\n");
 							exit(0);
 						}
