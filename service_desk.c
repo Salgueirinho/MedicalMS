@@ -36,6 +36,7 @@ void	handleSIGINT(int i)
 	(void) i;
 	printf("\nCtrl + c causes issues with this program due to SIGINT handling on"
 				" the classifier's end, therefor, to avoid bugs, write exit!\n");
+  unlink(SFIFO);
 }
 
 int main(void)
