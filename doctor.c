@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -31,6 +32,11 @@ void *sendSignal(void* data)
   close(sig->fd);
 }
 
+void	handleSIGINT(int i)
+{
+	(void) i;
+	printf("\nCtrl + c is disabled for this session, please use \"exit\" instead!\n");
+}
 
 int	main(int argc, char *argv[])
 {
@@ -45,6 +51,12 @@ int	main(int argc, char *argv[])
 	//char	control;
 	fd_set fds;
   pthread_t tid = -1;
+
+	if (signal(SIGINT, handleSIGINT) == SIG_ERR)
+	{
+		fprintf(stderr, "It wasn't possible to configure SIGINT\n");
+		exit(-1);
+	}
 
 	if (serviceDeskIsRunning(0) == false)
 	{
