@@ -11,6 +11,11 @@ int	main(void)
 	char				command[50];
 	int					pid;
 
+	if (serviceDeskIsRunning(getpid()) == true)
+	{
+		fprintf(stderr, "There is already a service desk running!\n");
+		exit(0);
+	}
 	setSIGINT();
 	/*if (serviceDeskIsRunning((int)getpid()) == true)
 		{

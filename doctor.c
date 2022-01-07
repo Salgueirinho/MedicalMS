@@ -16,11 +16,11 @@ int	main(int argc, char *argv[])
 		exit(0);
 	}
 	setSIGINT();
-	/*if (serviceDeskIsRunning(0) == true)
+	if (serviceDeskIsRunning(0) == false)
 		{
-		fprintf(stderr, "There is already a service desk running!\n");
+		fprintf(stderr, "The service desk isn't running!\n");
 		exit(0);
-		}*/
+	}
 	strncpy(doctordata.me.name, argv[1], sizeof(doctordata.me.name) - 1);
 	strncpy(doctordata.me.speciality, argv[2], sizeof(doctordata.me.speciality) - 1);
 	doctordata.me.pid = getpid();
