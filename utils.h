@@ -1,10 +1,9 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <stdbool.h>
-
-int	putString(const char *s, int fd);
-int	putNumber(int n, int fd);
-bool	serviceDeskIsRunning(const int pid); 
+void	handleSIGINT(int i);
+void	setSIGINT(void);
+void	*sendLifeSignal(void *ptr);
+void	*FIFOHandlerT(void *ptr);
 
 #endif

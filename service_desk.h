@@ -1,18 +1,33 @@
 #ifndef SERVICE_DESK_H
 #define SERVICE_DESK_H
 
-#define	SFIFO "/tmp/SFIFO"
+#include "patient.h"
+#include "doctor.h"
 
-#define MAX_SPECIALITIES 5
-#define MAX_PATIENTS 5
-#define MAX_DOCTORS 5
-#define MAX_LINE 5
+#define SFIFO "/tmp/SFIFO"
 
-typedef struct	MaxValues {
-	int	max_patients;	
-	int	max_doctors;
-	int	max_specialties;
-	int	max_line;
-} MaxValues;
+typedef struct PatientQueue {
+	Patient	patient;
+	int			fd;
+	struct PatientQueue	*next;
+} PatientQueue;
+
+typedef struct DoctorList {
+	Doctor	doctor;
+	int			timer;
+	bool		busy;
+	int			fd;
+	struct DoctorList	*next;
+} DoctorList;
+
+typedef struct ServerData {
+	PatientQueue	*patientqueue;
+	DoctorList		*doctorlist;
+	int						s_to_c[2];
+	int						c_to_s[2];
+	int						freq;
+	int						fd;
+	bool					exit;
+} ServerData;
 
 #endif

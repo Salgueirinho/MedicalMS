@@ -1,18 +1,19 @@
 #ifndef PATIENT_H
 #define PATIENT_H
 
-#define PFIFO "/tmp/p%d"
+#include <stdbool.h>
 
-typedef struct	Patient {
-  char	name[50];
-  char	symptoms[50];
-  int		pid;
+typedef struct Patient {
+	char	name[50];
+	char	symptoms[50];
 	char	speciality[17];
+	int		pid;
 } Patient;
 
-typedef struct	PatientList {
-	Patient	patient;
-	struct PatientList	*next;
-} PatientList;
+typedef struct PatientData {
+	Patient	me;
+	int			fd;
+	bool		exit;
+} PatientData;
 
 #endif

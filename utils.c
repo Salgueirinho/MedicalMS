@@ -1,54 +1,11 @@
-#include <stdbool.h>
-#include <dirent.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <fcntl.h>
+#include "medical_os.h"
 
-static int	intlen(int n)
+void	setSIGINT(void)
 {
-	int	len;
-
-	len = 0;
-	if (n == 0)
-		return (1);
-	else
+	if (signal(SIGINT, handleSIGINT) == SIG_ERR)
 	{
-		while (n)
-		{
-			len++;
-			n /= 10;
-		}
-	}
-	return (len);
-}
-
-int	putNumber(int n, int fd)
-{
-	char	n_str[12];
-	int		len;
-	int		i;
-
-	if (n == -2147483648)
-		return (write(fd, "-2147483648", 11));
-	else
-	{
-		len = intlen(n);
-		i = 0;
-		if (n < 0)
-		{
-			if (write(fd, "-", 1) == -1)
-				return -1;
-			n *= -1;
-		}
-		while (i < len)
-		{
-			n_str[len - i - 1] = n % 10 + '0';
-			n /= 10;
-			i++;
-		}
-		return (write(fd, n_str, len));
+		fprintf(stderr, "It wasn't possible to configure SIGINT\n");
+		exit(-1);
 	}
 }
 
@@ -63,11 +20,11 @@ static bool	isNumber(const char *s)
 	return (true);
 }
 
-bool serviceDeskIsRunning(const int pid)
+bool serviceDeskIsRunning(int pid)
 {
-	DIR* dir = NULL;
-	struct dirent* ent = NULL;
+	struct dirent	*ent = NULL;
 	char buf[50] = "\0";
+	DIR* dir = NULL;
 	int	fd = -1;
 
 	if (!(dir = opendir("/proc")))
@@ -99,4 +56,34 @@ bool serviceDeskIsRunning(const int pid)
 	}
 	closedir(dir);
 	return (false);
+}
+
+void	*sendLifeSignal(void *ptr)
+{
+	LifeSignal	*lifesignal = (LifeSignal *) ptr;
+	int					i;
+
+	while(true)
+	{
+		i = 0;
+		while (i < 19)
+		{
+			sleep(1);
+		if (*lifesignal->exit == true)
+			return (NULL);
+		}
+		if(write(lifesignal->service_desk_fd, "N", 1) == -1)
+		{
+			fprintf(stderr, "Couldn't write control character \"N\" to FIFO\n");
+			close(lifesignal->service_desk_fd);
+			exit(0);
+		}
+		if ((write(lifesignal->service_desk_fd, &lifesignal->pid, sizeof(int)) == -1))
+		{
+			fprintf(stderr, "Couldn't write life signal's PID to FIFO\n");
+			close(lifesignal->service_desk_fd);
+			exit(0);
+		}
+	}
+	return (NULL);
 }

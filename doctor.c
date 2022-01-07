@@ -1,143 +1,137 @@
-#include <signal.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include "doctor.h"
-#include "service_desk.h"
-#include "utils.h"
-#include <pthread.h>
-
-void *sendSignal(void* data)
-{
-  Signal* sig = (Signal *) data;
-  while(true)
-  {
-    sleep(20);
-    if(write(sig->fd, "N", 1) == -1)
-    {
-      fprintf(stderr, "Couldn't write to FIFO\n");
-      close(sig->fd);
-      exit(-1);
-    }
-    if ((write(sig->fd, &sig->pid, sizeof(int)) == -1))
-    {
-      fprintf(stderr, "Couldn't write to FIFO\n");
-      close(sig->fd);
-      exit(-1);
-    }
-  }
-  close(sig->fd);
-}
-
-void	handleSIGINT(int i)
-{
-	(void) i;
-	printf("\nCtrl + c is disabled for this session, please use \"exit\" instead!\n");
-}
+#include "medical_os.h"
 
 int	main(int argc, char *argv[])
 {
-	Doctor	me = {"", "", "", getpid(), 0, 21};
-	char		dfifo[20] = "";
-	char    command[255] = "";
-	int			fd;
-	struct timeval time;
-	int bytes = -1;
-	//int pid = -1;
-	//int fdp = -1;
-	//char	control;
-	fd_set fds;
-  pthread_t tid = -1;
+	DoctorData	doctordata;
+	LifeSignal	lifesignal;
+	pthread_t		lifesignal_t;
+	pthread_t		fifohandler_t;
+	char				dfifo[20];
+	char				command[50];
+	int					service_desk_fd;
 
-	if (signal(SIGINT, handleSIGINT) == SIG_ERR)
-	{
-		fprintf(stderr, "It wasn't possible to configure SIGINT\n");
-		exit(-1);
-	}
-
-	if (serviceDeskIsRunning(0) == false)
-	{
-		fprintf(stderr, "The service desk isn't running\n");
-		exit(0);
-	}
 	if (argc < 3)
 	{
-		fprintf(stderr, "%s <name> <speciality>\n", argv[0]);
+		printf("%s <name> <speciality>\n", argv[0]);
 		exit(0);
 	}
-	sprintf(dfifo, DFIFO, me.pid);
-	if (mkfifo(dfifo, 0600) == -1)
-	{
-		fprintf(stderr, "Error occured while trying to make FIFO\n");
+	setSIGINT();
+	/*if (serviceDeskIsRunning(0) == true)
+		{
+		fprintf(stderr, "There is already a service desk running!\n");
 		exit(0);
-	}
-	if (access(SFIFO, F_OK) != 0)
-	{
-		fprintf(stderr, "Error, service desk FIFO doesn't exist\n");
-		unlink(dfifo);
-		exit(0);
-	}
-	strncpy(me.name, argv[1], sizeof(me.name) - 1);
-	strncpy(me.speciality, argv[2], sizeof(me.speciality) - 1);
-	if ((fd = open(SFIFO, O_WRONLY)) == -1)
+		}*/
+	strncpy(doctordata.me.name, argv[1], sizeof(doctordata.me.name) - 1);
+	strncpy(doctordata.me.speciality, argv[2], sizeof(doctordata.me.speciality) - 1);
+	doctordata.me.pid = getpid();
+	doctordata.exit = false;
+	sprintf(dfifo, "/tmp/d%d", doctordata.me.pid);
+	if ((service_desk_fd = open(SFIFO, O_RDWR)) == -1)
 	{
 		fprintf(stderr, "Couldn't open named pipe file\n");
 		unlink(dfifo);
 		exit(0);
 	}
-	if (write(fd, "D", 1) == -1)
+	if (mkfifo(dfifo, 0600) == -1)
 	{
-		fprintf(stderr, "Couldn't write to named pipe\n");
-		close(fd);
+		fprintf(stderr, "Something went wrong while trying to make FIFO\n");
+		exit(0);
+	}
+	if ((doctordata.fd = open(dfifo, O_RDWR)) == -1)
+	{
+		fprintf(stderr, "Couldn't open doctor's FIFO\n");
 		unlink(dfifo);
 		exit(0);
 	}
-	if (write(fd, &me, sizeof(Doctor)) == -1)
+	if (write(service_desk_fd, "D", 1) == -1)
 	{
 		fprintf(stderr, "Couldn't write to named pipe\n");
-		close(fd);
+		close(service_desk_fd);
 		unlink(dfifo);
 		exit(0);
 	}
-	sprintf(me.signal, "M%d still alive\n", me.pid);
-	time.tv_sec = 20;
-	time.tv_usec = 0;
-    
-  Signal sig = {(int) getpid(), fd};
-  pthread_create(&tid,NULL, sendSignal, (void *) &sig);
-
-	do {
-		FD_ZERO(&fds);
-		FD_SET(0, &fds);
-		FD_SET(fd, &fds);
-		bytes = select(fd + 1, &fds, NULL, NULL, &time);
-		if (write(fd, me.signal, strlen(me.signal)) == -1)
+	if (write(service_desk_fd, &doctordata.me, sizeof(Doctor)) == -1)
+	{
+		fprintf(stderr, "Couldn't write to named pipe\n");
+		close(service_desk_fd);
+		unlink(dfifo);
+		exit(0);
+	}
+	lifesignal.pid = doctordata.me.pid;
+	lifesignal.service_desk_fd = service_desk_fd;
+	lifesignal.exit = &doctordata.exit;
+	pthread_create(&lifesignal_t, NULL, sendLifeSignal, &lifesignal);
+	pthread_create(&fifohandler_t, NULL, FIFOHandlerT, &doctordata);
+	while (true)
+	{
+		if (fgets(command, sizeof(command) - 1, stdin) == NULL)
 		{
-			fprintf(stderr, "Couldn't write to named pipe\n");
-			close(fd);
+			fprintf(stderr, "An error occured while trying to read command from stdin\n");
+			close(service_desk_fd);
 			unlink(dfifo);
 			exit(0);
 		}
-		if (bytes > 0 && FD_ISSET(0, &fds))
+		if (strcmp(command, "exit\n") == 0 || doctordata.exit == true)
+			break;
+	}
+	if ((write(doctordata.fd, "E", 1)) == -1)
+	{
+		fprintf(stderr, "Couldn't write control character \"E\" to doctor's FIFO\n");
+		unlink(dfifo);
+		close(service_desk_fd);
+		exit(0);
+	}
+	pthread_join(fifohandler_t, NULL);
+	pthread_join(lifesignal_t, NULL);
+	unlink(dfifo);
+	if(write(service_desk_fd, "E", 1) == -1)
+	{
+		fprintf(stderr, "Couldn't write control character \"E\" to FIFO\n");
+		close(service_desk_fd);
+		exit(0);
+	}
+	if ((write(service_desk_fd, &doctordata.me.pid, sizeof(int)) == -1))
+	{
+		fprintf(stderr, "Couldn't write exit signal's PID to FIFO\n");
+		close(service_desk_fd);
+		exit(0);
+	}
+	close(service_desk_fd);
+	printf("Hope to see you soon, %s\n", doctordata.me.name);
+	return (0);
+}
+
+void	handleSIGINT(int i)
+{
+	(void) i;
+	printf("\nCtrl + c is disabled, please use \"exit\" instead!\n");
+}
+
+void	*FIFOHandlerT(void *ptr)
+{
+	DoctorData	*doctordata = (DoctorData *) ptr;
+	char	control;
+
+	while (true)
+	{
+		if (read(doctordata->fd, &control, 1) == -1)
 		{
-			if (fgets(command, sizeof(command), stdin) == NULL)
-			{
-				fprintf(stderr, "Couldn't get command\n");
-				close(fd);
-				unlink(dfifo);
-				exit(0);
-			}
-			if (strcmp(command, "exit\n") == 0)
+			fprintf(stderr, "An error occured while trying to read control character\n");
+			// error occured
+		}
+		switch (control)
+		{
+			case 'Z':
+				printf("Received exit signal from service desk, press <Enter> to exit\n");
+				doctordata->exit = true;
+				return (NULL);
+			case 'E':
+				doctordata->exit = true;
+				return (NULL);
+			default:
+				// error occured
 				break;
 		}
-		else if (bytes > 0 && FD_ISSET(fd, &fds))
-		{
-
-		}
-	} while (true);
-	close(fd);
-	return (0);
+	}
+	return (NULL);
 }

@@ -1,74 +1,22 @@
-#include <fcntl.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include "service_desk.h"
-#include "patient.h"
-#include "utils.h"
-#include "doctor.h"
-#include <pthread.h>
+#include "medical_os.h"
 
-//void setBusyDoctor(DoctorList * doctor_list, int pid, int status);
-int	getQueueInFrontOfPatient(PatientList *patient_queue, Patient patient);
-void displayAllPatientQueueSize(PatientList *patient_queue);
-int getNotBusyDoctor(DoctorList *doctor_list, char *speciality);
-void setTimeout(long int *tv_sec, int desired_value);
-PatientList *removePatientFromQueue(PatientList * patient_queue, int position);
-DoctorList* removeDoctor(DoctorList * doctor_list, int position);
-int getPatientQueueSize(PatientList *patient_queue, char *speciality);
-int getPatientPriority(Patient patient);
-void	freePatientList(PatientList *patient_queue);
-void	displayPatientList(PatientList *patient_queue);
-PatientList	*addPatient(PatientList *patient_queue, Patient *patient);
-void	freeDoctorList(DoctorList *doctor_list);
-void	displayDoctorList(DoctorList *doctor_list);
-DoctorList	*addDoctor(DoctorList *doctor_list, Doctor *doctor);
-static void	executeClassifier(int p1[2], int p2[2]);
-bool checkInList(DoctorList *doctor_list, int pid);
-DoctorList * resetDoctorTimer(DoctorList *doctor_list, int pid);
-void	*decrement(void *doctor_list);
+bool	forceexit = false;
 
-void	handleSIGINT(int i)
+int	main(void)
 {
-	(void) i;
-	printf("\nCtrl + c causes issues with this program due to SIGINT handling on"
-				" the classifier's end, therefor, to avoid bugs, write exit!\n");
-  unlink(SFIFO);
-}
+	ServerData	serverdata;
+	pthread_t		patientqueue_t;
+	pthread_t		doctortimer_t;
+	pthread_t		fifohandler_t;
+	char				command[50];
+	int					pid;
 
-int main(void)
-{
-	Patient	patient = {"default", "", 0, "geral"};
-	Doctor	doctor = {"default", "", "", 0, 0, 21};
-	PatientList	*patient_queue = NULL;
-	DoctorList	*doctor_list = NULL;
- 	DoctorList	**doctor_list_pointer = &doctor_list;
-	char command[40] = "";
-	char pfifo[15] = "";
-	int p1[2] = {-1, -1};
-	int p2[2] = {-1, -1};
-	struct timeval time;
-	int bytes = -1;
-	int pid = -1;
-	int fd = -1;
-	int fdp = -1;
-	char	control;
-	fd_set fds;
-  pthread_t	decrementer;
-
-	if (signal(SIGINT, handleSIGINT) == SIG_ERR)
-	{
-		fprintf(stderr, "It wasn't possible to configure SIGINT\n");
-		exit(-1);
-	}
-	if (serviceDeskIsRunning((int)getpid()) == true)
-	{
+	setSIGINT();
+	/*if (serviceDeskIsRunning((int)getpid()) == true)
+		{
 		fprintf(stderr, "There is already a service desk running!\n");
 		exit(0);
-	}
+		}*/
 	if (access(SFIFO, F_OK) == 0)
 	{
 		fprintf(stderr, "There is already a service desk FIFO open\n");
@@ -76,582 +24,105 @@ int main(void)
 	}
 	if (mkfifo(SFIFO, 0600) == -1)
 	{
-		fprintf(stderr, "An error occured while trying to make FIFO\n");
+		fprintf(stderr, "An error occured while attempting to make FIFO\n");
 		exit(0);
 	}
-	if (pipe(p1) == -1)
+	if (pipe(serverdata.s_to_c) == -1)
 	{
 		unlink(SFIFO);
-		fprintf(stderr, "An error occured while trying to make pipe p1\n");
+		fprintf(stderr, "An error occured while attempting to make pipe serverdata.s_to_c\n");
 		exit(0);
 	}
-	if (pipe(p2) == -1)
+	if (pipe(serverdata.c_to_s) == -1)
 	{
-		close(p1[0]);
-		close(p1[1]);
+		close(serverdata.s_to_c[0]);
+		close(serverdata.s_to_c[1]);
 		unlink(SFIFO);
-		fprintf(stderr, "An error occured while trying to make pipe p2\n");
+		fprintf(stderr, "An error occured while attempting to make pipe serverdata.c_to_s\n");
 		exit(0);
 	}
 	if ((pid = fork()) == -1)
 	{
-		close(p2[0]);
-		close(p2[1]);
-		close(p1[0]);
-		close(p1[1]);
+		close(serverdata.c_to_s[0]);
+		close(serverdata.c_to_s[1]);
+		close(serverdata.s_to_c[0]);
+		close(serverdata.s_to_c[1]);
 		unlink(SFIFO);
-		fprintf(stderr, "An error occured while trying to fork\n");
+		fprintf(stderr, "An error occured while attempting to fork\n");
 		exit(0);
 	}
 	if (pid == 0)
-		executeClassifier(p1, p2);
-	close(p1[0]);
-	close(p2[1]);
-	if ((fd = open(SFIFO, O_RDWR)) == -1)
+		executeClassifier(serverdata.s_to_c, serverdata.c_to_s);
+	close(serverdata.s_to_c[0]);
+	close(serverdata.c_to_s[1]);
+	if ((serverdata.fd = open(SFIFO, O_RDWR)) == -1)
 	{
-		close(p1[1]);
-		close(p2[0]);
+		close(serverdata.s_to_c[1]);
+		close(serverdata.c_to_s[0]);
 		unlink(SFIFO);
-		fprintf(stderr, "An error occured while trying to open serice desk FIFO\n");
+		fprintf(stderr, "An error occured while attempting to open serice desk FIFO\n");
 		exit(0);
 	}
-	time.tv_sec = 10;
-	time.tv_usec = 0;
-
-	pthread_create(&decrementer, NULL, decrement, (void *) doctor_list_pointer);
-	do {
-		FD_ZERO(&fds);
-		FD_SET(0, &fds);
-		FD_SET(fd, &fds);
-		bytes = select(fd + 1, &fds, NULL, NULL, &time);
-		if (bytes == 0)
+	serverdata.patientqueue = NULL;
+	serverdata.doctorlist = NULL;
+	serverdata.freq = 20;
+	serverdata.exit = false;
+	pthread_create(&doctortimer_t, NULL, doctorTimerT, &serverdata);
+	pthread_create(&patientqueue_t, NULL, displayPatientQueueT, &serverdata);
+	pthread_create(&fifohandler_t, NULL, FIFOHandlerT, &serverdata);
+	while(true)
+	{
+		if (forceexit == true)
+			break;
+		if (fgets(command, sizeof(command) - 1, stdin) == NULL)
 		{
-			displayAllPatientQueueSize(patient_queue);
+			close(serverdata.s_to_c[1]);
+			close(serverdata.c_to_s[0]);
+			unlink(SFIFO);
+			fprintf(stderr, "An error occured while trying to read command from stdin\n");
+			exit(0);
 		}
-		else if (bytes > 0 && FD_ISSET(0, &fds))
+		if (forceexit == true || strcmp(command, "exit\n") == 0)
 		{
-			if (fgets(command, sizeof(command), stdin) == NULL)
-			{
-				close(fd);
-				close(p1[1]);
-				close(p2[0]);
-				unlink(SFIFO);
-				fprintf(stderr, "An error occured while trying to get command\n");
-				exit(0);
-			}
-			if (strcmp(command, "exit\n") == 0)
-      {
-        if(write(p1[1], "#fim\n", 5) == -1)
-        {
-          fprintf(stderr, "An error occured while trying to write to classifier\n");
-        }
-        break;
-      }
+			if (write(serverdata.s_to_c[1], "#fim\n", 5) == -1)
+				fprintf(stderr, "An error occured while attempting to write \"fim\" to classifier\n");
+			// send signal to threads
+			serverdata.exit = true;
+			// send signal to everyone
+			sendExitSignal(&serverdata);
+			break;
+		}
+		else
+		{
+			if(strncmp(command, "freq ", 5) == 0)
+				setFreq(&serverdata.freq, atoi(command + 5));
 			else if (strcmp(command, "patients\n") == 0)
-				displayPatientList(patient_queue);
+				displayPatientQueue(serverdata.patientqueue);
 			else if (strcmp(command, "doctors\n") == 0)
-				displayDoctorList(doctor_list);
+				displayDoctorList(serverdata.doctorlist);
 			else if (strncmp(command, "delp ", 5) == 0)
-				patient_queue = removePatientFromQueue(patient_queue, atoi(command + 5));
+				serverdata.patientqueue = removePatient(serverdata.patientqueue, atoi(command + 5));
 			else if (strncmp(command, "deld ", 5) == 0)
-				doctor_list = removeDoctor(doctor_list, atoi(command + 5));
-			else if (strncmp(command, "freq ", 5) == 0)
-				setTimeout(&time.tv_sec, atoi(command+5));
+				serverdata.doctorlist = removeDoctor(serverdata.doctorlist, atoi(command + 5));
 		}
-		else if (bytes > 0 && FD_ISSET(fd, &fds))
-		{
-			if (read(fd, &control , 1) == -1)
-			{
-				close(fd);
-				close(p1[1]);
-				close(p2[0]);
-				unlink(SFIFO);
-				fprintf(stderr, "An error occured while trying to read control character\n");
-				exit(0);
-			}
-      if (control == 'D')
-      {
-        if ((bytes = read(fd, &doctor, sizeof(Doctor))) == -1)
-        {
-          close(fd);
-          close(p1[1]);
-          close(p2[0]);
-          unlink(SFIFO);
-          fprintf(stderr, "An error occured while trying to read doctor's details\n");
-          exit(0);
-        }
-        if (bytes == sizeof(Doctor))
-        {
-          doctor_list = addDoctor(doctor_list, &doctor);
-          printf("Registered specialist:\n"
-          "- name: %s\n"
-          "- speciality: %s\n"
-          "- pid: %d\n",
-          doctor.name, doctor.speciality, doctor.pid);
-        }
-      }
-      else if (control == 'N')
-      {
-        if ((bytes = read(fd, &doctor.pid, sizeof(int))) == -1)
-        {
-          close(fd);
-          close(p1[1]);
-          close(p2[0]);
-          unlink(SFIFO);
-          fprintf(stderr, "An error occured while trying to read doctor's details\n");
-          exit(0);
-        }
-        if(checkInList(doctor_list, doctor.pid))
-          {
-            doctor_list = resetDoctorTimer(doctor_list, doctor.pid);
-            printf("Received life signal from %d\n", doctor.pid);
-          }
-      }
-      else if (control == 'P')
-			{ 
-				if ((bytes = read(fd, &patient, sizeof(Patient))) == -1)
-				{
-					close(fd);
-					close(p1[1]);
-					close(p2[0]);
-					unlink(SFIFO);
-					fprintf(stderr, "An error occured while trying to read patient's details\n");
-					exit(0);
-				}
-				if (bytes == sizeof(Patient))
-				{
-					if (write(p1[1], patient.symptoms, strlen(patient.symptoms)) == -1)
-					{
-						close(fd);
-						close(p1[1]);
-						close(p2[0]);
-						unlink(SFIFO);
-						fprintf(stderr, "An error occured while trying to write symptoms\n");
-						exit(0);
-					}
-					if (strcmp(patient.symptoms, "#fim\n") != 0)
-					{
-						if ((bytes = read(p2[0], patient.speciality, sizeof(patient.speciality))) == -1)
-						{
-							close(fd);
-							close(p1[1]);
-							close(p2[0]);
-							unlink(SFIFO);
-							fprintf(stderr, "An error occured while trying to read speciality\n");
-							exit(0);
-						}
-						patient.speciality[bytes] = '\0';
-						if(getPatientQueueSize(patient_queue, patient.speciality) >= 5)
-						{
-							printf("Queue is full\n");
-						}
-						sprintf(pfifo, "/tmp/p%d", patient.pid);
-						if ((fdp = open(pfifo, O_WRONLY)) == -1)
-						{
-							close(fd);
-							close(p1[1]);
-							close(p2[0]);
-							unlink(SFIFO);
-							fprintf(stderr, "An error occured while trying to open patient FIFO\n");
-						}
-						if (write(fdp, patient.speciality, strlen(patient.speciality)) == -1)
-						{
-							close(fdp);
-							close(fd);
-							close(p1[1]);
-							close(p2[0]);
-							unlink(SFIFO);
-							fprintf(stderr, "An error occured while trying to write speciality\n");
-							exit(0);
-						}
-						bytes = getQueueInFrontOfPatient(patient_queue, patient);
-						if (write(fdp, &bytes, sizeof(int)) == -1)
-						{
-							close(fdp);
-							close(fd);
-							close(p1[1]);
-							close(p2[0]);
-							unlink(SFIFO);
-							fprintf(stderr, "An error occured while trying to write queue size\n");
-							exit(0);
-						}
-						patient_queue = addPatient(patient_queue, &patient);
-						printf("Registered patient:\n"
-								"- name: %s\n"
-								"- symptoms: %s"
-								"- pid: %d\n"
-								"- speciality: %s",
-								patient.name, patient.symptoms, patient.pid,patient.speciality);
-						printf("Patient queue size for this speciality: %d\n",
-								getPatientQueueSize(patient_queue, patient.speciality));
-						close(fdp);
-					}
-				}
-			}
-		}
-	} while (true);
-	close(fd);
+	}
+	serverdata.freq = 0;
+	pthread_join(doctortimer_t, NULL);
+	pthread_join(patientqueue_t, NULL);
+	pthread_join(fifohandler_t, NULL);
+	close(serverdata.s_to_c[1]);
+	close(serverdata.c_to_s[0]);
+	freePatientQueue(serverdata.patientqueue);
+	freeDoctorList(serverdata.doctorlist);
+	close(serverdata.fd);
 	unlink(SFIFO);
-	close(p1[1]);
-	close(p2[0]);
-	freePatientList(patient_queue);
-	freeDoctorList(doctor_list);
+	printf("See you later!\n");
 	return (0);
 }
 
-void	*decrement(void *doctor_list)
+void	handleSIGINT(int i)
 {
-	DoctorList	**aux1;
-	DoctorList	*aux2;
-	DoctorList	*aux3;
-
-	int	counter;
-
-	aux1 = (DoctorList **) doctor_list;
-	while (true)
-	{
-		aux2 = (DoctorList *) *aux1;
-		counter = 0;
-		while (aux2 != NULL)
-		{
-			counter++;
-			aux2->doctor.timer--;
-      aux3 = aux2->next;
-			if (aux2->doctor.timer == 0)
-      {
-        printf("Didn't received life signal on time for %d\n", aux2->doctor.pid);
-				*aux1 = removeDoctor(*aux1, counter);
-        counter--;
-      }
-      aux2 = aux3;
-		}
-		sleep(1);
-	}
-	return (doctor_list);
-}
-
-bool checkInList(DoctorList *doctor_list, int pid)
-{
-  DoctorList *aux = doctor_list;
-  while(aux != NULL)
-  {
-    if (aux->doctor.pid == pid)
-      return true;
-    aux = aux->next;
-  }
-  return false;
-}
-
-DoctorList * resetDoctorTimer(DoctorList *doctor_list, int pid)
-{
-  DoctorList *aux = doctor_list;
-  while(aux != NULL)
-  {
-    if (aux->doctor.pid == pid)
-    {
-      aux->doctor.timer = 21;
-      break;
-    }
-    aux = aux->next;
-  }
-  return doctor_list;
-}
-
-void displayAllPatientQueueSize(PatientList *patient_queue)
-{
-	printf("Speciality\tPatients\n"
-			"geral\t\t%d\n"
-			"ortopedia\t%d\n"
-			"estomatologia\t%d\n"
-			"neurologia\t%d\n"
-			"oftalmologia\t%d\n",
-			getPatientQueueSize(patient_queue, "geral"),
-			getPatientQueueSize(patient_queue, "ortopedia"),
-			getPatientQueueSize(patient_queue, "estomatologia"),
-			getPatientQueueSize(patient_queue, "neurologia"),
-			getPatientQueueSize(patient_queue, "oftalmologia"));
-}
-
-/*
-   void setBusyDoctor(DoctorList * doctor_list, int pid, int status)
-   {
-   DoctorList *aux = doctor_list;
-
-   while (aux->next != NULL)
-   {
-   if (aux->doctor.pid == pid)
-   {
-   aux->doctor.busy = status;
-   return;
-   }
-   aux = aux->next;
-   }
-   }
-   */
-
-int getNotBusyDoctor(DoctorList *doctor_list, char *speciality)
-{
-	DoctorList * aux = doctor_list;
-
-	while (aux->next != NULL)
-	{
-		if (aux->doctor.busy == 0 && strncmp(aux->doctor.speciality, speciality, strlen(speciality)) == 0)
-		{
-			return (aux->doctor.pid);
-		}
-	}
-	return -1;
-}
-
-int	getQueueInFrontOfPatient(PatientList *patient_queue, Patient patient)
-{
-	int size = 0;
-	PatientList *aux = patient_queue;
-	int len = strlen(patient.speciality)-3;
-	len = len > 0 ? len : 0;
-
-	while(aux != NULL)
-	{
-		if (strncmp(aux->patient.speciality, patient.speciality, len) == 0
-				&& getPatientPriority(patient) <= getPatientPriority(aux->patient))
-			size++;
-		aux = aux->next;
-	}
-	return (size);
-}
-
-int getPatientQueueSize(PatientList *patient_queue, char *speciality)
-{
-	int size = 0;
-	PatientList *aux = patient_queue;
-	int len = strlen(speciality)-3;
-	len = len > 0 ? len : 0;
-
-	while(aux != NULL)
-	{
-		if (strncmp(aux->patient.speciality, speciality, len) == 0)
-			size++;
-		aux = aux->next;
-	}
-	return (size);
-}
-
-int getPatientPriority(Patient patient)
-{
-	for (int i=0; patient.speciality[i]; i++)\
-		if (patient.speciality[i+1] == '\n')
-			return patient.speciality[i] - '0'; 
-	return (3);
-}
-
-DoctorList	*addDoctor(DoctorList *doctor_list, Doctor *doctor)
-{
-	DoctorList	*aux = doctor_list;
-
-	if (doctor_list == NULL)
-	{
-		doctor_list = (DoctorList *) malloc(sizeof(DoctorList));
-		memcpy(&doctor_list->doctor, doctor, sizeof(Doctor));
-		doctor_list->next = NULL;
-	}
-	else
-	{
-		while (aux->next != NULL)
-			aux = aux->next;
-		aux->next = (DoctorList *) malloc(sizeof(DoctorList));
-		memcpy(&aux->next->doctor, doctor, sizeof(Doctor));
-		aux->next->next = NULL;
-	}
-	return (doctor_list);
-}
-
-void	freeDoctorList(DoctorList *doctor_list)
-{
-	DoctorList	*aux = doctor_list;
-
-	while (doctor_list)
-	{
-		aux = doctor_list;
-		doctor_list = doctor_list->next;
-		free(aux);
-	}
-}
-
-void	displayDoctorList(DoctorList *doctor_list)
-{
-	DoctorList	*aux = doctor_list;
-
-	while (aux)
-	{
-		printf("doctor: %s, %s\n", aux->doctor.name,
-				aux->doctor.speciality);
-		aux = aux->next;
-	}
-}
-
-PatientList	*addPatient(PatientList *patient_queue, Patient *patient)
-{
-	PatientList	*aux = patient_queue;
-
-	if (patient_queue == NULL)
-	{
-		patient_queue = (PatientList *) malloc(sizeof(PatientList));
-		memcpy(&patient_queue->patient, patient, sizeof(Patient));
-		patient_queue->next = NULL;
-	}
-	else
-	{
-		while (aux->next != NULL)
-			aux = aux->next;
-		aux->next = (PatientList *) malloc(sizeof(PatientList));
-		memcpy(&aux->next->patient, patient, sizeof(Patient));
-		aux->next->next = NULL;
-	}
-	return (patient_queue);
-}
-
-void	freePatientList(PatientList *patient_queue)
-{
-	PatientList	*aux = patient_queue;
-
-	while (patient_queue)
-	{
-		aux = patient_queue;
-		patient_queue = patient_queue->next;
-		free(aux);
-	}
-}
-
-void	displayPatientList(PatientList *patient_queue)
-{
-	PatientList	*aux = patient_queue;
-
-	while (aux)
-	{
-		printf("patient: %s, %s", aux->patient.name,
-				aux->patient.speciality);
-		aux = aux->next;
-	}
-}
-
-PatientList* removePatientFromQueue(PatientList * patient_queue, int position)
-{
-	int queue_size = getPatientQueueSize(patient_queue, "");
-	PatientList  *aux = patient_queue;
-	PatientList * temp = NULL;
-
-	if(patient_queue != NULL)
-	{
-		if(position == 1 && queue_size >= 1)
-		{
-			temp = patient_queue;
-			patient_queue = patient_queue->next;
-			free(temp);
-		}
-		else if (position == queue_size && position !=0)
-		{
-			while(aux->next->next != NULL)
-				aux= aux->next; 
-			free(aux->next);
-			aux->next = NULL; 
-		}
-		else if(1 < position && position < queue_size)
-		{
-			for(int i=0;i<position-2;i++)
-			{
-				aux = aux->next;
-			}
-			temp = aux->next;
-			aux->next = aux->next->next;
-			free(temp);
-		}
-	}
-	return patient_queue;
-}
-
-int getDoctorListSize(DoctorList *doctor_list, char *speciality)
-{
-	int size = 0;
-	DoctorList *aux = doctor_list;
-	int len = strlen(speciality)-3;
-	len = len > 0 ? len : 0;
-
-	while(aux != NULL)
-	{
-		if (strncmp(aux->doctor.speciality, speciality, len) == 0)
-			size++;
-		aux = aux->next;
-	}
-	return (size);
-}
-
-DoctorList* removeDoctor(DoctorList * doctor_list, int position)
-{
-	int list_size = getDoctorListSize(doctor_list, "");
-	DoctorList	*aux = doctor_list;
-	DoctorList	*temp = NULL;
-
-	if(doctor_list != NULL)
-	{
-		if(position == 1 && list_size >= 1)
-		{
-			if (doctor_list->doctor.busy == 0)
-			{
-				temp = doctor_list;
-				doctor_list = doctor_list->next;
-				free(temp);
-			}
-		}
-		else if (position == list_size && position !=0)
-		{
-			while(aux->next->next != NULL)
-				aux= aux->next; 
-			if (aux->next->doctor.busy == 0)
-			{
-				free(aux->next);
-				aux->next = NULL; 
-			}
-		}
-		else if(1 < position && position < list_size)
-		{
-			for(int i=0; i<position-2; i++)
-				aux = aux->next;
-			temp = aux->next;
-			if (temp->doctor.busy == 0)
-			{
-				aux->next = aux->next->next;
-				free(temp);
-			}
-		}
-	}
-	return doctor_list;
-}
-
-static void	executeClassifier(int p1[2], int p2[2])
-{
-	close(p1[1]);
-	close(p2[0]);
-	close(0);
-	if (dup(p1[0]) == -1)
-	{
-		// do something
-	}
-	close(1);
-	if (dup(p2[1]) == -1)
-	{
-		// do something
-	}
-	close(p1[0]);
-	close(p2[1]);
-	execl("classifier", "classifier", NULL);
-	fprintf(stderr, "An error occured while attempting to execute the classifier\n");
-	unlink(SFIFO);
-	exit(0);
-}
-void setTimeout(long int *tv_sec, int desired_value)
-{
-	if(desired_value > 0)
-	{
-		*tv_sec = desired_value;
-	}
+	(void) i;
+	printf("\nPress <enter> to exit\n");
+	forceexit = true;
 }
