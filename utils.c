@@ -65,12 +65,13 @@ void	*sendLifeSignal(void *ptr)
 
 	while(true)
 	{
-		i = 1;
-		while (i <= 18)
+		i = 0;
+		while (i < 15)
 		{
 			sleep(1);
 			if (*lifesignal->exit == true)
 				return (NULL);
+			i++;
 		}
 		if(write(lifesignal->service_desk_fd, "N", 1) == -1)
 		{
