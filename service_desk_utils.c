@@ -26,6 +26,17 @@ void	*FIFOHandlerT(void *ptr)
 					serverdata->exit = true;
 				}
 				printf("Succesfully received patient %s, with symptoms %s", current_patient.name, current_patient.symptoms);
+				if (write(serverdata->s_to_c[1], current_patient.symptoms, strlen(current_patient.symptoms)) == -1)
+				{
+					fprintf(stderr, "Error occured while writing symptoms to classifier\n");
+					serverdata->exit = true;
+				}
+				if (read(serverdata->c_to_s[0], current_patient.speciality, sizeof(current_patient.speciality) - 1) == -1)
+				{
+					fprintf(stderr, "Error occured while reading speciality from classifier\n");
+					serverdata->exit = true;
+				}
+				printf("Succesfully determined speciality %s", current_patient.speciality);
 				serverdata->patientqueue = addPatient(serverdata->patientqueue, &current_patient);
 				break;
 			case 'D':
@@ -67,6 +78,7 @@ void	*FIFOHandlerT(void *ptr)
 			case 'Z':
 				break;
 			default:
+				fprintf(stderr, "Control digit came out corrupt\n");
 				// error occured
 				break;
 		}
@@ -339,6 +351,7 @@ PatientQueue	*addPatient(PatientQueue *patientqueue, Patient *patient)
 {
 	PatientQueue	*aux = patientqueue;
 	char					fifo[20];
+	int						size;
 
 	sprintf(fifo, "/tmp/p%d", patient->pid);
 	if (access(fifo, F_OK) == -1)
@@ -346,6 +359,7 @@ PatientQueue	*addPatient(PatientQueue *patientqueue, Patient *patient)
 		fprintf(stderr, "The patient's FIFO isn't open\n");
 		// error occured
 	}
+	size = strlen(patient->speciality);
 	if (patientqueue == NULL)
 	{
 		patientqueue = (PatientQueue *) malloc(sizeof(PatientQueue));
@@ -353,6 +367,22 @@ PatientQueue	*addPatient(PatientQueue *patientqueue, Patient *patient)
 		if ((patientqueue->fd = open(fifo, O_WRONLY)) == -1)
 		{
 			fprintf(stderr, "An error occured while trying to open FIFO for new patient\n");
+			// error occured
+		}
+		if (write(patientqueue->fd, &size, sizeof(int)) != sizeof(int))
+		{
+			fprintf(stderr, "An error occured while trying to write size to patient's FIFO\n");
+			// error occured
+		}
+		if (write(patientqueue->fd, patientqueue->patient.speciality, size) == -1)
+		{
+			fprintf(stderr, "An error occured while trying to write speciality to patient's FIFO\n");
+			// error occured
+		}
+		size = 0;
+		if (write(patientqueue->fd, &size, sizeof(int)) == -1)
+		{
+			fprintf(stderr, "An error occured while trying to write queue size to patient's FIFO\n");
 			// error occured
 		}
 		patientqueue->next = NULL;
@@ -366,6 +396,22 @@ PatientQueue	*addPatient(PatientQueue *patientqueue, Patient *patient)
 		if ((aux->next->fd = open(fifo, O_WRONLY)) == -1)
 		{
 			fprintf(stderr, "An error occured while trying to open FIFO for new patient\n");
+			// error occured
+		}
+		if (write(aux->next->fd, &size, sizeof(int)) != sizeof(int))
+		{
+			fprintf(stderr, "An error occured while trying to write size to patient's FIFO\n");
+			// error occured
+		}
+		if (write(aux->next->fd, aux->next->patient.speciality, size) == -1)
+		{
+			fprintf(stderr, "An error occured while trying to write speciality to patient's FIFO\n");
+			// error occured
+		}
+		size = getQueueInFrontOfPatient(patientqueue, *patient) - 1;
+		if (write(aux->next->fd, &size, sizeof(int)) == -1)
+		{
+			fprintf(stderr, "An error occured while trying to write queue size to patient's FIFO\n");
 			// error occured
 		}
 		aux->next->next = NULL;
@@ -480,6 +526,31 @@ void	displayPatientQueue(PatientQueue *patientqueue)
 				aux->patient.speciality);
 		aux = aux->next;
 	}
+}
+
+int getPatientPriority(Patient patient)
+{
+	for (int i=0; patient.speciality[i]; i++)
+		if (patient.speciality[i+1] == '\n')
+			return (patient.speciality[i] - '0'); 
+	return (3);
+}
+
+int	getQueueInFrontOfPatient(PatientQueue *patientqueue, Patient patient)
+{
+	PatientQueue *aux = patientqueue;
+	int len = strlen(patient.speciality)-3;
+	len = len > 0 ? len : 0;
+	int size = 0;
+
+	while(aux)
+	{
+		if (strncmp(aux->patient.speciality, patient.speciality, len) == 0
+				&& getPatientPriority(patient) <= getPatientPriority(aux->patient))
+			size++;
+		aux = aux->next;
+	}
+	return (size);
 }
 
 // miscellaneous

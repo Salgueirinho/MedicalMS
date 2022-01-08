@@ -20,4 +20,5 @@ typedef struct DoctorData {
 	int			fd;
 	bool		exit;
 } DoctorData;
+
 #endif

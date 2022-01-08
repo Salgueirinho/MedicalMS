@@ -4,9 +4,9 @@
 #include <stdbool.h>
 
 typedef struct Patient {
-	char	name[50];
-	char	symptoms[50];
 	char	speciality[17];
+	char	symptoms[50];
+	char	name[50];
 	int		pid;
 } Patient;
 

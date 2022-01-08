@@ -4,8 +4,7 @@ int	main(int argc, char *argv[])
 {
 	DoctorData	doctordata;
 	LifeSignal	lifesignal;
-	pthread_t		lifesignal_t;
-	pthread_t		fifohandler_t;
+	pthread_t		lifesignal_t, fifohandler_t;
 	char				dfifo[20];
 	char				command[50];
 	int					service_desk_fd;

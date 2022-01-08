@@ -26,6 +26,7 @@ PatientQueue	*removePatientPID(PatientQueue *patientqueue, int pid);
 int						getPatientQueueSize(PatientQueue *patientqueue, char *speciality);
 void					freePatientQueue(PatientQueue *patientqueue);
 void					displayPatientQueue(PatientQueue *patientqueue);
+int						getQueueInFrontOfPatient(PatientQueue *patientqueue, Patient patient);
 
 // miscellaneous
 

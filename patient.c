@@ -7,6 +7,8 @@ int	main(int argc, char *argv[])
 	char				command[50];
 	int					service_desk_fd;
 	pthread_t		fifohandler_t;
+	int					size;
+	int					bytes;
 
 	if (argc < 2)
 	{
@@ -20,6 +22,7 @@ int	main(int argc, char *argv[])
 		exit(0);
 	}
 	strncpy(patientdata.me.name, argv[1], sizeof(patientdata.me.name) - 1);
+	bzero(patientdata.me.speciality, sizeof(patientdata.me.speciality));
 	patientdata.me.pid = getpid();
 	patientdata.exit = false;
 	sprintf(pfifo, "/tmp/p%d", patientdata.me.pid);
@@ -55,11 +58,34 @@ int	main(int argc, char *argv[])
 	}
 	if (write(service_desk_fd, &patientdata.me, sizeof(Patient)) == -1)
 	{
-		fprintf(stderr, "Couldn't write to named pipe\n");
+		fprintf(stderr, "Couldn't write patient to named pipe\n");
 		close(service_desk_fd);
 		unlink(pfifo);
 		exit(0);
 	}
+	if (read(patientdata.fd, &size, sizeof(int)) != sizeof(int))
+	{
+		fprintf(stderr, "Couldn't read speciality size from named pipe\n");
+		close(service_desk_fd);
+		unlink(pfifo);
+		exit(0);
+	}
+	if ((bytes = read(patientdata.fd, patientdata.me.speciality, size)) == -1)
+	{
+		fprintf(stderr, "Couldn't read speciality from named pipe\n");
+		close(service_desk_fd);
+		unlink(pfifo);
+		exit(0);
+	}
+	printf("Speciality: %s", patientdata.me.speciality);
+	if (read(patientdata.fd, &size, sizeof(int)) == -1)
+	{
+		fprintf(stderr, "Couldn't read queue size from named pipe\n");
+		close(service_desk_fd);
+		unlink(pfifo);
+		exit(0);
+	}
+	printf("Queue size: %d\n", size);
 	pthread_create(&fifohandler_t, NULL, FIFOHandlerT, &patientdata);
 	while (true)
 	{
@@ -70,7 +96,9 @@ int	main(int argc, char *argv[])
 			unlink(pfifo);
 			exit(0);
 		}
-		if (strcmp(command, "exit\n") == 0 || patientdata.exit == true)
+		if (strcmp(command, "exit\n") == 0)
+			patientdata.exit = true;
+		if (patientdata.exit == true)
 			break;
 	}
 	if ((write(patientdata.fd, "E", 1)) == -1)
@@ -129,6 +157,8 @@ void	*FIFOHandlerT(void *ptr)
 				patientdata->exit = true;
 				return (NULL);
 			default:
+				fprintf(stderr, "An error occured! Read non-fiable control digit\n");
+				patientdata->exit = true;
 				// error occured
 				break;
 		}

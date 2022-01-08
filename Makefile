@@ -23,4 +23,5 @@ doctor: $(UTILS)
 clean:
 	@rm -f $(OBJECTS) $(UTILS) $(SERVICE_DESK_UTILS)
 
-re:				clean all
+re: clean
+	@make all
