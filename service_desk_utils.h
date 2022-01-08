@@ -7,6 +7,7 @@
 
 void	*doctorTimerT(void *ptr);
 void	*displayPatientQueueT(void *ptr);
+void	*patientQueueT(void *ptr);
 
 // doctor list
 
@@ -27,6 +28,7 @@ int						getPatientQueueSize(PatientQueue *patientqueue, char *speciality);
 void					freePatientQueue(PatientQueue *patientqueue);
 void					displayPatientQueue(PatientQueue *patientqueue);
 int						getQueueInFrontOfPatient(PatientQueue *patientqueue, Patient patient);
+int						getPatientPriority(Patient patient);
 
 // miscellaneous
 

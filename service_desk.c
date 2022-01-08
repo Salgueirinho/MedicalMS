@@ -6,6 +6,7 @@ int	main(void)
 {
 	ServerData	serverdata;
 	pthread_t		patientqueue_t;
+	pthread_t		queuehandler_t;
 	pthread_t		doctortimer_t;
 	pthread_t		fifohandler_t;
 	char				command[50];
@@ -17,11 +18,6 @@ int	main(void)
 		exit(0);
 	}
 	setSIGINT();
-	/*if (serviceDeskIsRunning((int)getpid()) == true)
-		{
-		fprintf(stderr, "There is already a service desk running!\n");
-		exit(0);
-		}*/
 	if (access(SFIFO, F_OK) == 0)
 	{
 		fprintf(stderr, "There is already a service desk FIFO open\n");
@@ -75,6 +71,7 @@ int	main(void)
 	pthread_create(&doctortimer_t, NULL, doctorTimerT, &serverdata);
 	pthread_create(&patientqueue_t, NULL, displayPatientQueueT, &serverdata);
 	pthread_create(&fifohandler_t, NULL, FIFOHandlerT, &serverdata);
+	pthread_create(&queuehandler_t, NULL, patientQueueT, &serverdata);
 	while(true)
 	{
 		if (fgets(command, sizeof(command) - 1, stdin) == NULL)
@@ -89,9 +86,7 @@ int	main(void)
 		{
 			if (write(serverdata.s_to_c[1], "#fim\n", 5) == -1)
 				fprintf(stderr, "An error occured while attempting to write \"fim\" to classifier\n");
-			// send signal to threads
 			serverdata.exit = true;
-			// send signal to everyone
 			sendExitSignal(&serverdata);
 			break;
 		}

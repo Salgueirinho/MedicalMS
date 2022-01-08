@@ -2,6 +2,50 @@
 
 // threads
 
+void	*patientQueueT(void *ptr)
+{
+	ServerData		*serverdata = (ServerData *) ptr;
+	DoctorList		*d_aux;
+	PatientQueue	*p_aux1;
+	PatientQueue	*p_aux2 = NULL;
+
+	while (serverdata->exit == false)
+	{
+		d_aux = serverdata->doctorlist;
+		while (d_aux)
+		{
+			if (d_aux->busy == false)
+			{
+				p_aux1 = serverdata->patientqueue;
+				p_aux2 = NULL;
+				while(p_aux1)
+				{
+					if (strncmp(p_aux1->patient.speciality, d_aux->doctor.speciality, strlen(d_aux->doctor.speciality) - 3) == 0)
+					{
+						if (p_aux2 == NULL)
+						{
+							p_aux2 = p_aux1;
+							continue ;
+						}
+						if (getPatientPriority(p_aux2->patient) < getPatientPriority(p_aux1->patient))
+							p_aux2 = p_aux1;
+					}
+					p_aux1 = p_aux1->next;
+				}
+				if (p_aux2 != NULL)
+				{
+					printf("Patient %s and doctor %s are a match!\n", p_aux2->patient.name, d_aux->doctor.name);
+					printf("Setting doctor %s to busy.\n", d_aux->doctor.name);
+					d_aux->busy = true;
+				}
+			}
+			d_aux = d_aux->next;
+		}
+		sleep(1);
+	}
+	return (NULL);
+}
+
 void	*FIFOHandlerT(void *ptr)
 {
 	ServerData	*serverdata = (ServerData *) ptr;
@@ -189,6 +233,7 @@ DoctorList	*addDoctor(DoctorList *doctorlist, Doctor *doctor)
 		doctorlist = (DoctorList *) malloc(sizeof(DoctorList));
 		memcpy(&doctorlist->doctor, doctor, sizeof(Doctor));
 		doctorlist->next = NULL;
+		doctorlist->busy = false;
 		if ((doctorlist->fd = open(fifo, O_WRONLY)) == -1)
 		{
 			fprintf(stderr, "An error occured while trying to open FIFO for new doctor\n");
@@ -203,6 +248,7 @@ DoctorList	*addDoctor(DoctorList *doctorlist, Doctor *doctor)
 		aux->next = (DoctorList *) malloc(sizeof(DoctorList));
 		memcpy(&aux->next->doctor, doctor, sizeof(Doctor));
 		aux->next->next = NULL;
+		aux->next->busy = false;
 		if ((aux->next->fd = open(fifo, O_WRONLY)) == -1)
 		{
 			fprintf(stderr, "An error occured while trying to open FIFO for new doctor\n");
