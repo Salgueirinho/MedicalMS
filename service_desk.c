@@ -77,8 +77,6 @@ int	main(void)
 	pthread_create(&fifohandler_t, NULL, FIFOHandlerT, &serverdata);
 	while(true)
 	{
-		if (forceexit == true)
-			break;
 		if (fgets(command, sizeof(command) - 1, stdin) == NULL)
 		{
 			close(serverdata.s_to_c[1]);
@@ -129,5 +127,6 @@ void	handleSIGINT(int i)
 {
 	(void) i;
 	printf("\nPress <enter> to exit\n");
+	unlink(SFIFO);
 	forceexit = true;
 }
