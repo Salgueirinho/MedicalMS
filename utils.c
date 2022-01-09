@@ -73,16 +73,16 @@ void	*sendLifeSignal(void *ptr)
 				return (NULL);
 			i++;
 		}
-		if(write(lifesignal->service_desk_fd, "N", 1) == -1)
+		if(write(lifesignal->s_fd, "N", 1) == -1)
 		{
 			fprintf(stderr, "Couldn't write control character \"N\" to FIFO\n");
-			close(lifesignal->service_desk_fd);
+			close(lifesignal->s_fd);
 			exit(0);
 		}
-		if ((write(lifesignal->service_desk_fd, &lifesignal->pid, sizeof(int)) == -1))
+		if ((write(lifesignal->s_fd, &lifesignal->pid, sizeof(int)) == -1))
 		{
 			fprintf(stderr, "Couldn't write life signal's PID to FIFO\n");
-			close(lifesignal->service_desk_fd);
+			close(lifesignal->s_fd);
 			exit(0);
 		}
 	}

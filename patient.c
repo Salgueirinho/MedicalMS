@@ -3,10 +3,10 @@
 int	main(int argc, char *argv[])
 {
 	PatientData	patientdata;
-	char				pfifo[20];
-	char				command[50];
-	int					service_desk_fd;
 	pthread_t		fifohandler_t;
+	int					s_fd;
+	char				message[255];
+	char				pfifo[20];
 	int					size;
 	int					bytes;
 
@@ -25,6 +25,8 @@ int	main(int argc, char *argv[])
 	bzero(patientdata.me.speciality, sizeof(patientdata.me.speciality));
 	patientdata.me.pid = getpid();
 	patientdata.exit = false;
+	patientdata.attending = false;
+	patientdata.d_fd = -1;
 	sprintf(pfifo, "/tmp/p%d", patientdata.me.pid);
 	printf("Describe your symptoms: ");
 	if (fgets(patientdata.me.symptoms, sizeof(patientdata.me.symptoms) - 1, stdin) == NULL)
@@ -43,37 +45,37 @@ int	main(int argc, char *argv[])
 		unlink(pfifo);
 		exit(0);
 	}
-	if ((service_desk_fd = open(SFIFO, O_WRONLY)) == -1)
+	if ((s_fd = open(SFIFO, O_WRONLY)) == -1)
 	{
 		fprintf(stderr, "Couldn't open service desk FIFO\n");
 		unlink(pfifo);
 		exit(0);
 	}
-	if (write(service_desk_fd, "P", 1) == -1)
+	if (write(s_fd, "P", 1) == -1)
 	{
 		fprintf(stderr, "Couldn't write to service desk FIFO\n");
-		close(service_desk_fd);
+		close(s_fd);
 		unlink(pfifo);
 		exit(0);
 	}
-	if (write(service_desk_fd, &patientdata.me, sizeof(Patient)) == -1)
+	if (write(s_fd, &patientdata.me, sizeof(Patient)) == -1)
 	{
 		fprintf(stderr, "Couldn't write patient to named pipe\n");
-		close(service_desk_fd);
+		close(s_fd);
 		unlink(pfifo);
 		exit(0);
 	}
 	if (read(patientdata.fd, &size, sizeof(int)) != sizeof(int))
 	{
 		fprintf(stderr, "Couldn't read speciality size from named pipe\n");
-		close(service_desk_fd);
+		close(s_fd);
 		unlink(pfifo);
 		exit(0);
 	}
 	if ((bytes = read(patientdata.fd, patientdata.me.speciality, size)) == -1)
 	{
 		fprintf(stderr, "Couldn't read speciality from named pipe\n");
-		close(service_desk_fd);
+		close(s_fd);
 		unlink(pfifo);
 		exit(0);
 	}
@@ -81,7 +83,7 @@ int	main(int argc, char *argv[])
 	if (read(patientdata.fd, &size, sizeof(int)) == -1)
 	{
 		fprintf(stderr, "Couldn't read queue size from named pipe\n");
-		close(service_desk_fd);
+		close(s_fd);
 		unlink(pfifo);
 		exit(0);
 	}
@@ -89,42 +91,55 @@ int	main(int argc, char *argv[])
 	pthread_create(&fifohandler_t, NULL, FIFOHandlerT, &patientdata);
 	while (true)
 	{
-		if (fgets(command, sizeof(command) - 1, stdin) == NULL)
+		if (fgets(message, sizeof(message) - 1, stdin) == NULL)
 		{
-			fprintf(stderr, "An error occured while trying to read command from stdin\n");
-			close(service_desk_fd);
+			fprintf(stderr, "An error occured while trying to read message from stdin\n");
+			close(s_fd);
 			unlink(pfifo);
 			exit(0);
 		}
-		if (strcmp(command, "exit\n") == 0)
+		if (strcmp(message, "exit\n") == 0)
 			patientdata.exit = true;
 		if (patientdata.exit == true)
 			break;
+		if (patientdata.attending == true)
+		{
+			if (patientdata.d_fd != -1)
+			{
+				if (write(patientdata.d_fd, message, strlen(message)) == -1)
+				{
+					fprintf(stderr, "Couldn't write to doctor FIFO\n");
+					close(s_fd);
+					unlink(pfifo);
+					exit(0);
+				}
+			}
+		}
 	}
 	if ((write(patientdata.fd, "E", 1)) == -1)
 	{
 		fprintf(stderr, "Couldn't write control character \"Z\" to patient's FIFO\n");
 		unlink(pfifo);
-		close(service_desk_fd);
+		close(s_fd);
 		exit(0);
 	}
 	pthread_join(fifohandler_t, NULL);
 	unlink(pfifo);
-	if(write(service_desk_fd, "F", 1) == -1)
+	if(write(s_fd, "F", 1) == -1)
 	{
 		fprintf(stderr, "Couldn't write control character \"F\" to FIFO\n");
 		unlink(pfifo);
-		close(service_desk_fd);
+		close(s_fd);
 		exit(0);
 	}
-	if ((write(service_desk_fd, &patientdata.me.pid, sizeof(int)) == -1))
+	if ((write(s_fd, &patientdata.me.pid, sizeof(int)) == -1))
 	{
 		fprintf(stderr, "Couldn't write exit signal's PID to FIFO\n");
 		unlink(pfifo);
-		close(service_desk_fd);
+		close(s_fd);
 		exit(0);
 	}
-	close(service_desk_fd);
+	close(s_fd);
 	printf("Hope to see you soon, %s\n", patientdata.me.name);
 	return (0);
 }
@@ -138,9 +153,13 @@ void	handleSIGINT(int i)
 void	*FIFOHandlerT(void *ptr)
 {
 	PatientData	*patientdata = (PatientData *) ptr;
+	char	doctorfifo[20];
+	int		pid;
 	char	control;
+	int		bytes;
+	char	message[255];
 
-	while (true)
+	while (patientdata->exit == false)
 	{
 		if (read(patientdata->fd, &control, 1) == -1)
 		{
@@ -155,6 +174,34 @@ void	*FIFOHandlerT(void *ptr)
 			case 'Z':
 				printf("Received exit signal from service desk, press <Enter> to exit\n");
 				patientdata->exit = true;
+				return (NULL);
+			case 'S':
+				patientdata->attending = true;
+				if (read(patientdata->fd, &pid, sizeof(int)) == -1)
+				{
+					fprintf(stderr, "Couldn't read doctor PID for appointment");
+					patientdata->exit = true;
+					return (NULL);
+				}
+				sprintf(doctorfifo, "/tmp/d%d", pid);
+				if ((patientdata->d_fd = open(doctorfifo, O_WRONLY)) == -1)
+				{
+					fprintf(stderr, "Couldn't open doctor fifo for appointment");
+					patientdata->exit = true;
+					return (NULL);
+				}
+				printf("Starting doctor's appointment\n");
+				while (patientdata->exit == false)
+				{
+					if ((bytes = read(patientdata->fd, message, sizeof(message) - 1)) == -1)
+					{
+						fprintf(stderr, "Couldn't read incoming message\n");
+						patientdata->exit = true;
+						return (NULL);
+					}
+					message[bytes] = '\0';
+					printf("Doctor: %s", message);
+				}
 				return (NULL);
 			default:
 				fprintf(stderr, "An error occured! Read non-fiable control digit\n");

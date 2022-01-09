@@ -14,6 +14,8 @@ typedef struct PatientData {
 	Patient	me;
 	int			fd;
 	bool		exit;
+	int			d_fd;
+	bool		attending;
 } PatientData;
 
 #endif

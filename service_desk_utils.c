@@ -35,7 +35,26 @@ void	*patientQueueT(void *ptr)
 				if (p_aux2 != NULL)
 				{
 					printf("Patient %s and doctor %s are a match!\n", p_aux2->patient.name, d_aux->doctor.name);
-					printf("Setting doctor %s to busy.\n", d_aux->doctor.name);
+					if (write(p_aux2->fd, "S", 1) == -1)
+					{
+						fprintf(stderr, "An error occured while trying to write \'S\' to patient\n");
+						serverdata->exit = true;
+					}
+					if (write(p_aux2->fd, &d_aux->doctor.pid, sizeof(int)) == -1)
+					{
+						fprintf(stderr, "An error occured while trying to write doctor's PID to patient\n");
+						serverdata->exit = true;
+					}
+					if (write(d_aux->fd, "S", 1) == -1)
+					{
+						fprintf(stderr, "An error occured while trying to write \'S\' to doctor\n");
+						serverdata->exit = true;
+					}
+					if (write(d_aux->fd, &p_aux2->patient.pid, sizeof(int)) == -1)
+					{
+						fprintf(stderr, "An error occured while trying to write patient's PID to doctor\n");
+						serverdata->exit = true;
+					}
 					d_aux->busy = true;
 				}
 			}

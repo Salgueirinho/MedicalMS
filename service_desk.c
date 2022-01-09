@@ -5,10 +5,7 @@ bool	forceexit = false;
 int	main(void)
 {
 	ServerData	serverdata;
-	pthread_t		patientqueue_t;
-	pthread_t		queuehandler_t;
-	pthread_t		doctortimer_t;
-	pthread_t		fifohandler_t;
+	pthread_t		patientqueue_t, queuehandler_t, doctortimer_t, fifohandler_t;
 	char				command[50];
 	int					pid;
 
@@ -108,6 +105,7 @@ int	main(void)
 	pthread_join(doctortimer_t, NULL);
 	pthread_join(patientqueue_t, NULL);
 	pthread_join(fifohandler_t, NULL);
+	pthread_join(queuehandler_t, NULL);
 	close(serverdata.s_to_c[1]);
 	close(serverdata.c_to_s[0]);
 	freePatientQueue(serverdata.patientqueue);

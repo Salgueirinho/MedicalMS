@@ -11,7 +11,7 @@ typedef struct Doctor {
 
 typedef struct LifeSignal {
 	int		pid;
-	int		service_desk_fd;
+	int		s_fd;
 	bool	*exit;
 } LifeSignal;
 
@@ -19,6 +19,8 @@ typedef struct DoctorData {
 	Doctor	me;
 	int			fd;
 	bool		exit;
+	bool		attending;
+	int			p_fd;
 } DoctorData;
 
 #endif
