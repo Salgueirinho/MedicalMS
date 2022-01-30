@@ -1,21 +1,17 @@
 #ifndef PATIENT_H
 #define PATIENT_H
 
+#define patientfifo "/tmp/p%dfifo"
+
 #include <stdbool.h>
 
-typedef struct Patient {
-	char	speciality[17];
-	char	symptoms[50];
-	char	name[50];
-	int		pid;
-} Patient;
-
-typedef struct PatientData {
-	Patient	me;
-	int			fd;
+typedef struct SharedPData {
+	char		name[50];
+	int			sfd;
+	int			pfd;
+	int			dfd;
 	bool		exit;
-	int			d_fd;
-	bool		attending;
-} PatientData;
+	bool		appointment;
+} SharedPData;
 
 #endif

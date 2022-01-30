@@ -1,125 +1,134 @@
-#include "medical_os.h"
-
-bool	forceexit = false;
+#include <sys/stat.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
+#include <signal.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include "service_desk_utils.h"
+#include "service_desk.h"
+#include "patient.h"
+#include "doctor.h"
+#include "utils.h"
 
 int	main(void)
 {
-	ServerData	serverdata;
-	pthread_t		patientqueue_t, queuehandler_t, doctortimer_t, fifohandler_t;
+	SharedSData	shared_data;
+	pthread_t		read_worker;
+	pthread_t		queue_worker;
+	pthread_t		doctor_worker;
+	pthread_t		appointment_worker;
 	char				command[50];
 	int					pid;
 
-	if (serviceDeskIsRunning(getpid()) == true)
+	if (serviceDeskIsRunning(getpid()))
 	{
 		fprintf(stderr, "There is already a service desk running!\n");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
-	setSIGINT();
-	if (access(SFIFO, F_OK) == 0)
+	if (signal(SIGINT, handleSIGINT) == SIG_ERR)
 	{
-		fprintf(stderr, "There is already a service desk FIFO open\n");
-		exit(0);
+		fprintf(stderr, "It wasn't possible to configure SIGINT\n");
+		exit(EXIT_FAILURE);
 	}
 	if (mkfifo(SFIFO, 0600) == -1)
 	{
-		fprintf(stderr, "An error occured while attempting to make FIFO\n");
-		exit(0);
+		fprintf(stderr, "Couldn't mkfifo\n");
+		exit(EXIT_FAILURE);
 	}
-	if (pipe(serverdata.s_to_c) == -1)
+	if (pipe(shared_data.s_to_c) == -1)
 	{
 		unlink(SFIFO);
-		fprintf(stderr, "An error occured while attempting to make pipe serverdata.s_to_c\n");
-		exit(0);
+		fprintf(stderr, "An error occured while attempting to make pipe shared_data.s_to_c\n");
+		exit(EXIT_FAILURE);
 	}
-	if (pipe(serverdata.c_to_s) == -1)
+	if (pipe(shared_data.c_to_s) == -1)
 	{
-		close(serverdata.s_to_c[0]);
-		close(serverdata.s_to_c[1]);
+		close(shared_data.s_to_c[0]);
+		close(shared_data.s_to_c[1]);
 		unlink(SFIFO);
-		fprintf(stderr, "An error occured while attempting to make pipe serverdata.c_to_s\n");
-		exit(0);
+		fprintf(stderr, "An error occured while attempting to make pipe shared_data.c_to_s\n");
+		exit(EXIT_FAILURE);
 	}
 	if ((pid = fork()) == -1)
 	{
-		close(serverdata.c_to_s[0]);
-		close(serverdata.c_to_s[1]);
-		close(serverdata.s_to_c[0]);
-		close(serverdata.s_to_c[1]);
+		close(shared_data.c_to_s[0]);
+		close(shared_data.c_to_s[1]);
+		close(shared_data.s_to_c[0]);
+		close(shared_data.s_to_c[1]);
 		unlink(SFIFO);
 		fprintf(stderr, "An error occured while attempting to fork\n");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 	if (pid == 0)
-		executeClassifier(serverdata.s_to_c, serverdata.c_to_s);
-	close(serverdata.s_to_c[0]);
-	close(serverdata.c_to_s[1]);
-	if ((serverdata.fd = open(SFIFO, O_RDWR)) == -1)
+		executeClassifier(shared_data.s_to_c, shared_data.c_to_s);
+	close(shared_data.s_to_c[0]);
+	close(shared_data.c_to_s[1]);
+	shared_data.exit = false;
+	shared_data.patientqueue = NULL;
+	shared_data.doctorlist = NULL;
+	shared_data.freq = 30;
+	setMaxQueueSize(&shared_data.maxqueuesize);
+	setMaxDoctors(&shared_data.maxdoctors);
+	if ((shared_data.sfd = open(SFIFO, O_RDWR)) == -1)
 	{
-		close(serverdata.s_to_c[1]);
-		close(serverdata.c_to_s[0]);
+		fprintf(stderr, "Couldn't open sfifo\n");
 		unlink(SFIFO);
-		fprintf(stderr, "An error occured while attempting to open serice desk FIFO\n");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
-	serverdata.patientqueue = NULL;
-	serverdata.doctorlist = NULL;
-	serverdata.freq = 20;
-	serverdata.exit = false;
-	pthread_create(&doctortimer_t, NULL, doctorTimerT, &serverdata);
-	pthread_create(&patientqueue_t, NULL, displayPatientQueueT, &serverdata);
-	pthread_create(&fifohandler_t, NULL, FIFOHandlerT, &serverdata);
-	pthread_create(&queuehandler_t, NULL, patientQueueT, &serverdata);
-	while(true)
+	if (pthread_create(&read_worker, NULL, readFIFO, &shared_data) != 0)
+	{
+		fprintf(stderr, "Couldn't create read worker\n");
+		shared_data.exit = true;
+	}
+	if (pthread_create(&queue_worker, NULL, displayQueue, &shared_data) != 0)
+	{
+		fprintf(stderr, "Couldn't create queue worker\n");
+		shared_data.exit = true;
+	}
+	if (pthread_create(&doctor_worker, NULL, doctorTimer, &shared_data) != 0)
+	{
+		fprintf(stderr, "Couldn't create doctor worker\n");
+		shared_data.exit = true;
+	}
+	if (pthread_create(&appointment_worker, NULL, appointmentHandler, &shared_data) != 0)
+	{
+		fprintf(stderr, "Couldn't create doctor worker\n");
+		shared_data.exit = true;
+	}
+	while (shared_data.exit == false)
 	{
 		if (fgets(command, sizeof(command) - 1, stdin) == NULL)
 		{
-			close(serverdata.s_to_c[1]);
-			close(serverdata.c_to_s[0]);
-			unlink(SFIFO);
-			fprintf(stderr, "An error occured while trying to read command from stdin\n");
-			exit(0);
+			fprintf(stderr, "Couldn't get command from stdin\n");
 		}
-		if (forceexit == true || strcmp(command, "exit\n") == 0)
-		{
-			if (write(serverdata.s_to_c[1], "#fim\n", 5) == -1)
-				fprintf(stderr, "An error occured while attempting to write \"fim\" to classifier\n");
-			serverdata.exit = true;
-			sendExitSignal(&serverdata);
-			break;
-		}
-		else
-		{
-			if(strncmp(command, "freq ", 5) == 0)
-				setFreq(&serverdata.freq, atoi(command + 5));
-			else if (strcmp(command, "patients\n") == 0)
-				displayPatientQueue(serverdata.patientqueue);
-			else if (strcmp(command, "doctors\n") == 0)
-				displayDoctorList(serverdata.doctorlist);
-			else if (strncmp(command, "delp ", 5) == 0)
-				serverdata.patientqueue = removePatient(serverdata.patientqueue, atoi(command + 5));
-			else if (strncmp(command, "deld ", 5) == 0)
-				serverdata.doctorlist = removeDoctor(serverdata.doctorlist, atoi(command + 5));
-		}
+		executeCommand(command, &shared_data);
 	}
-	serverdata.freq = 0;
-	pthread_join(doctortimer_t, NULL);
-	pthread_join(patientqueue_t, NULL);
-	pthread_join(fifohandler_t, NULL);
-	pthread_join(queuehandler_t, NULL);
-	close(serverdata.s_to_c[1]);
-	close(serverdata.c_to_s[0]);
-	freePatientQueue(serverdata.patientqueue);
-	freeDoctorList(serverdata.doctorlist);
-	close(serverdata.fd);
+	freePatientQueue(shared_data.patientqueue);
+	freeDoctorList(shared_data.doctorlist);
+	if (pthread_join(doctor_worker, NULL) != 0)
+	{
+		fprintf(stderr, "Couldn't join doctor worker\n");
+		close(shared_data.sfd);
+		unlink(SFIFO);
+		exit(EXIT_FAILURE);
+	}
+	if (pthread_join(queue_worker, NULL) != 0)
+	{
+		fprintf(stderr, "Couldn't join queue worker\n");
+		close(shared_data.sfd);
+		unlink(SFIFO);
+		exit(EXIT_FAILURE);
+	}
+	if (pthread_join(read_worker, NULL) != 0)
+	{
+		fprintf(stderr, "Couldn't join read worker\n");
+		close(shared_data.sfd);
+		unlink(SFIFO);
+		exit(EXIT_FAILURE);
+	}
+	close(shared_data.sfd);
 	unlink(SFIFO);
-	printf("See you later!\n");
 	return (0);
-}
-
-void	handleSIGINT(int i)
-{
-	(void) i;
-	printf("\nPress <enter> to exit\n");
-	unlink(SFIFO);
-	forceexit = true;
 }

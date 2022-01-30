@@ -4,24 +4,23 @@ SOURCES = patient.c	\
 
 OBJECTS	= $(patsubst %.c, %, $(SOURCES))
 
-UTILS = utils.o
-
-SERVICE_DESK_UTILS = service_desk_utils.o
-
-FLAGS		= -Wall -Wextra -pthread #-Werror
+FLAGS		= -Wall -Wextra -pthread
 
 CC			= gcc $(FLAGS)
 
 all:			$(OBJECTS) $(UTILS)
 
-patient: $(UTILS)
+%.o: %.c
+	$(CC) -c -o $@ $< $(FLAGS)
 
-service_desk: $(SERVICE_DESK_UTILS) $(UTILS)
+patient: patient_utils.o utils.o
 
-doctor: $(UTILS)
+service_desk: service_desk_utils.o utils.o
+
+doctor: doctor_utils.o utils.o
 
 clean:
-	@rm -f $(OBJECTS) $(UTILS) $(SERVICE_DESK_UTILS)
+	@rm -f $(OBJECTS) *.o
 
 re: clean
 	@make all
